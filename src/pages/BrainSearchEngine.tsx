@@ -221,12 +221,11 @@ export default function BrainSearchEngine() {
                         <SelectTrigger className="bg-background/60 border-border/60">
                           <SelectValue placeholder="Todos los tipos" />
                         </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="">Todos los tipos</SelectItem>
-                          <SelectItem value="hook">Hooks</SelectItem>
-                          <SelectItem value="guion">Guiones</SelectItem>
-                          <SelectItem value="cta">CTAs</SelectItem>
-                        </SelectContent>
+                         <SelectContent>
+                           <SelectItem value="hook">Hooks</SelectItem>
+                           <SelectItem value="guion">Guiones</SelectItem>
+                           <SelectItem value="cta">CTAs</SelectItem>
+                         </SelectContent>
                       </Select>
                     </div>
 
@@ -242,13 +241,12 @@ export default function BrainSearchEngine() {
                         <SelectTrigger className="bg-background/60 border-border/60">
                           <SelectValue placeholder="Todos los estilos" />
                         </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="">Todos los estilos</SelectItem>
-                          <SelectItem value="storytelling">Storytelling</SelectItem>
-                          <SelectItem value="walk & talk">Walk & Talk</SelectItem>
-                          <SelectItem value="text overlay">Text Overlay</SelectItem>
-                          <SelectItem value="talking head">Talking Head</SelectItem>
-                        </SelectContent>
+                         <SelectContent>
+                           <SelectItem value="storytelling">Storytelling</SelectItem>
+                           <SelectItem value="walk & talk">Walk & Talk</SelectItem>
+                           <SelectItem value="text overlay">Text Overlay</SelectItem>
+                           <SelectItem value="talking head">Talking Head</SelectItem>
+                         </SelectContent>
                       </Select>
                     </div>
 

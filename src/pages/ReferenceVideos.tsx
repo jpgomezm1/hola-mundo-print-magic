@@ -231,7 +231,6 @@ export default function ReferenceVideos() {
                 <SelectValue placeholder="Todas las categorías" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todas las categorías</SelectItem>
                 {categories.map(category => (
                   <SelectItem key={category} value={category} className="capitalize">
                     {category}
