@@ -58,6 +58,10 @@ export default function ReferenceVideos() {
   const categories = getCategories();
   const allTags = getAllTags();
 
+  // Debug logging
+  console.log('Categories:', categories);
+  console.log('All tags:', allTags);
+
   // Filtered and sorted videos
   const filteredVideos = useMemo(() => {
     let videos = referenceVideos;
@@ -231,7 +235,7 @@ export default function ReferenceVideos() {
                 <SelectValue placeholder="Todas las categorías" />
               </SelectTrigger>
               <SelectContent>
-                {categories.map(category => (
+                {categories.filter(category => category && category.trim() !== '').map(category => (
                   <SelectItem key={category} value={category} className="capitalize">
                     {category}
                   </SelectItem>

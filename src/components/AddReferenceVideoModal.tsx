@@ -17,7 +17,7 @@ interface AddReferenceVideoModalProps {
 
 const VIDEO_CATEGORIES = [
   'educativo',
-  'entretenimiento',
+  'entretenimiento', 
   'viral',
   'storytelling',
   'producto',
@@ -26,7 +26,9 @@ const VIDEO_CATEGORIES = [
   'tutorial',
   'lifestyle',
   'otros'
-];
+].filter(cat => cat && cat.trim() !== '');
+
+console.log('VIDEO_CATEGORIES:', VIDEO_CATEGORIES);
 
 const COMMON_TAGS = [
   'hook fuerte',
@@ -174,7 +176,7 @@ export const AddReferenceVideoModal: React.FC<AddReferenceVideoModalProps> = ({
                 <SelectValue placeholder="Selecciona una categoría" />
               </SelectTrigger>
               <SelectContent>
-                {VIDEO_CATEGORIES.map(cat => (
+                {VIDEO_CATEGORIES.filter(cat => cat && cat.trim() !== '').map(cat => (
                   <SelectItem key={cat} value={cat} className="capitalize">
                     {cat}
                   </SelectItem>
