@@ -268,7 +268,7 @@ export default function PerformanceTab({ analyticsData, topBottomData, performan
                       <div 
                         className={`h-full bg-${category.color}-500 rounded-full transition-all duration-1000`}
                         style={{ 
-                          width: `${Math.min(100, (analyticsData.retentionBreakdown[category.k] / Math.max(...Object.values(analyticsData.retentionBreakdown))) * 100)}%` 
+                          width: `${Math.min(100, (Number(analyticsData.retentionBreakdown[category.k]) / Math.max(...Object.values(analyticsData.retentionBreakdown).map(Number))) * 100)}%` 
                         }}
                       ></div>
                     </div>
@@ -285,7 +285,7 @@ export default function PerformanceTab({ analyticsData, topBottomData, performan
                   <span className="font-medium text-text-primary text-sm sm:text-base">Resumen de Retención</span>
                 </div>
                 <div className="text-xs sm:text-sm text-text-secondary">
-                  Total: {Object.values(analyticsData.retentionBreakdown).reduce((a: number, b: number) => a + b, 0)} videos
+                  Total: {Object.values(analyticsData.retentionBreakdown).reduce((a: number, b) => a + Number(b), 0).toString()} videos
                 </div>
               </div>
             </div>

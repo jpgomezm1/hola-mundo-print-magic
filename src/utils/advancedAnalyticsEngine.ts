@@ -671,9 +671,11 @@ export class AdvancedAnalyticsEngine {
     // 3. Performance Anomaly Detection
     const declining_themes = content_theme_performance.filter(t => t.trend === 'down' && t.video_count >= 3);
     
+    const generatedInsights: AdvancedInsight[] = [];
+
     if (declining_themes.length > 0) {
       const theme = declining_themes[0];
-      insights.push({
+      generatedInsights.push({
         id: 'performance-anomaly-' + theme.theme,
         type: 'performance_anomaly',
         title: `Declive en performance: "${theme.theme}"`,
@@ -690,7 +692,25 @@ export class AdvancedAnalyticsEngine {
       });
     }
 
-    return insights.slice(0, 6);
+    const currentAvgDuration = durationData.length > 0 
+      ? durationData.reduce((sum, v) => sum + v.duration, 0) / durationData.length
+      : 30;
+
+    const optimalRange = bestRange.duration_range === '15-30s' 
+      ? { min: 15, max: 30 }
+      : bestRange.duration_range === '30-60s'
+      ? { min: 30, max: 60 }
+      : { min: 15, max: 60 };
+
+    return {
+      retention_vs_saves: retentionSavesData,
+      duration_sweet_spot: {
+        optimal_range: optimalRange,
+        current_avg: Math.round(currentAvgDuration),
+        performance_by_duration
+      },
+      content_theme_performance
+    };
   }
 
   // Utility method to execute complex SQL queries

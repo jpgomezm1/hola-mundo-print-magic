@@ -27,6 +27,7 @@ export interface Video {
   saves?: number;
   new_followers?: number;
   video_theme?: string;
+  video_type?: string;
   cta_type?: string;
   editing_style?: string;
   avg_time_watched?: number;
