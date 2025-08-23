@@ -3,24 +3,50 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/hooks/useAuth";
+import { AppLayout } from "@/components/AppLayout";
 import Index from "./pages/Index";
+import Auth from "./pages/Auth";
+import Dashboard from "./pages/Dashboard";
+import Videos from "./pages/Videos";
+import Analytics from "./pages/Analytics";
+import Settings from "./pages/Settings";
+import VideoDetail from "./pages/VideoDetail";
+import AIGenerate from "./pages/AIGenerate";
+import AccountContext from "./pages/AccountContext";
+import BrainSearchEngine from "./pages/BrainSearchEngine";
+import ContentIdeas from "./pages/ContentIdeas";
+import ViralAnalyzer from "./pages/ViralAnalyzer";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/dashboard" element={<AppLayout><Dashboard /></AppLayout>} />
+            <Route path="/videos" element={<AppLayout><Videos /></AppLayout>} />
+            <Route path="/videos/:id" element={<AppLayout><VideoDetail /></AppLayout>} />
+            <Route path="/ai-generate" element={<AppLayout><AIGenerate /></AppLayout>} />
+            <Route path="/analytics" element={<AppLayout><Analytics /></AppLayout>} />
+            <Route path="/context" element={<AppLayout><AccountContext /></AppLayout>} />
+            <Route path="/brain-search" element={<AppLayout><BrainSearchEngine /></AppLayout>} />
+            <Route path="/content-ideas" element={<AppLayout><ContentIdeas /></AppLayout>} />
+            <Route path="/viral-analyzer" element={<AppLayout><ViralAnalyzer /></AppLayout>} />
+            <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
