@@ -18,6 +18,7 @@ import ContentIdeas from "./pages/ContentIdeas";
 import ViralAnalyzer from "./pages/ViralAnalyzer";
 import NotFound from "./pages/NotFound";
 import Analytics from "./pages/Analytics";
+import ReferenceVideos from "./pages/ReferenceVideos";
 
 const queryClient = new QueryClient();
 
@@ -39,7 +40,7 @@ const App = () => (
             <Route path="/brain-search" element={<AppLayout><BrainSearchEngine /></AppLayout>} />
             <Route path="/content-ideas" element={<AppLayout><ContentIdeas /></AppLayout>} />
             <Route path="/viral-analyzer" element={<AppLayout><ViralAnalyzer /></AppLayout>} />
-            <Route path="/analytics" element={<AppLayout><Analytics /></AppLayout>} />
+            <Route path="/reference-videos" element={<AppLayout><ReferenceVideos /></AppLayout>} />
             <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
             <Route path="*" element={<NotFound />} />
           </Routes>

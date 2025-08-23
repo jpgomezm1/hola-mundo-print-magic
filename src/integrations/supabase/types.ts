@@ -193,6 +193,90 @@ export type Database = {
         }
         Relationships: []
       }
+      reference_videos: {
+        Row: {
+          audio_style: string | null
+          category: string | null
+          created_at: string
+          creator_username: string | null
+          cta_type: string | null
+          description: string | null
+          duration_seconds: number | null
+          editing_style: string | null
+          engagement_metrics: Json | null
+          extracted_insights: Json | null
+          hashtags: string[] | null
+          hook: string | null
+          id: string
+          is_favorite: boolean | null
+          notes: string | null
+          script: string | null
+          tags: string[] | null
+          thumbnail_url: string | null
+          tiktok_url: string
+          title: string | null
+          tone_style: string | null
+          updated_at: string
+          user_id: string
+          video_theme: string | null
+          visual_elements: string[] | null
+        }
+        Insert: {
+          audio_style?: string | null
+          category?: string | null
+          created_at?: string
+          creator_username?: string | null
+          cta_type?: string | null
+          description?: string | null
+          duration_seconds?: number | null
+          editing_style?: string | null
+          engagement_metrics?: Json | null
+          extracted_insights?: Json | null
+          hashtags?: string[] | null
+          hook?: string | null
+          id?: string
+          is_favorite?: boolean | null
+          notes?: string | null
+          script?: string | null
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          tiktok_url: string
+          title?: string | null
+          tone_style?: string | null
+          updated_at?: string
+          user_id: string
+          video_theme?: string | null
+          visual_elements?: string[] | null
+        }
+        Update: {
+          audio_style?: string | null
+          category?: string | null
+          created_at?: string
+          creator_username?: string | null
+          cta_type?: string | null
+          description?: string | null
+          duration_seconds?: number | null
+          editing_style?: string | null
+          engagement_metrics?: Json | null
+          extracted_insights?: Json | null
+          hashtags?: string[] | null
+          hook?: string | null
+          id?: string
+          is_favorite?: boolean | null
+          notes?: string | null
+          script?: string | null
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          tiktok_url?: string
+          title?: string | null
+          tone_style?: string | null
+          updated_at?: string
+          user_id?: string
+          video_theme?: string | null
+          visual_elements?: string[] | null
+        }
+        Relationships: []
+      }
       saved_views: {
         Row: {
           created_at: string | null
