@@ -199,19 +199,31 @@ export type Database = {
           category: string | null
           created_at: string
           creator_username: string | null
+          cta: string | null
           cta_type: string | null
           description: string | null
           duration_seconds: number | null
           editing_style: string | null
           engagement_metrics: Json | null
+          estilo_edicion: string | null
           extracted_insights: Json | null
+          guion_oral: string | null
           hashtags: string[] | null
           hook: string | null
           id: string
           is_favorite: boolean | null
+          justificacion_tema: string | null
+          metrics_comments: number | null
+          metrics_likes: number | null
+          metrics_shares: number | null
+          metrics_views: number | null
           notes: string | null
           script: string | null
+          storage_path: string | null
           tags: string[] | null
+          tags_ai: Json | null
+          tam_ai: string | null
+          tema_principal: string | null
           thumbnail_url: string | null
           tiktok_url: string
           title: string | null
@@ -226,19 +238,31 @@ export type Database = {
           category?: string | null
           created_at?: string
           creator_username?: string | null
+          cta?: string | null
           cta_type?: string | null
           description?: string | null
           duration_seconds?: number | null
           editing_style?: string | null
           engagement_metrics?: Json | null
+          estilo_edicion?: string | null
           extracted_insights?: Json | null
+          guion_oral?: string | null
           hashtags?: string[] | null
           hook?: string | null
           id?: string
           is_favorite?: boolean | null
+          justificacion_tema?: string | null
+          metrics_comments?: number | null
+          metrics_likes?: number | null
+          metrics_shares?: number | null
+          metrics_views?: number | null
           notes?: string | null
           script?: string | null
+          storage_path?: string | null
           tags?: string[] | null
+          tags_ai?: Json | null
+          tam_ai?: string | null
+          tema_principal?: string | null
           thumbnail_url?: string | null
           tiktok_url: string
           title?: string | null
@@ -253,19 +277,31 @@ export type Database = {
           category?: string | null
           created_at?: string
           creator_username?: string | null
+          cta?: string | null
           cta_type?: string | null
           description?: string | null
           duration_seconds?: number | null
           editing_style?: string | null
           engagement_metrics?: Json | null
+          estilo_edicion?: string | null
           extracted_insights?: Json | null
+          guion_oral?: string | null
           hashtags?: string[] | null
           hook?: string | null
           id?: string
           is_favorite?: boolean | null
+          justificacion_tema?: string | null
+          metrics_comments?: number | null
+          metrics_likes?: number | null
+          metrics_shares?: number | null
+          metrics_views?: number | null
           notes?: string | null
           script?: string | null
+          storage_path?: string | null
           tags?: string[] | null
+          tags_ai?: Json | null
+          tam_ai?: string | null
+          tema_principal?: string | null
           thumbnail_url?: string | null
           tiktok_url?: string
           title?: string | null
