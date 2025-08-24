@@ -444,8 +444,8 @@ Proporciona un análisis extremadamente detallado siguiendo EXACTAMENTE la estru
                     properties: {
                       elementos_universales: { type: "array", items: { type: "string" } },
                       elementos_especificos: { type: "array", items: { type: "string" } },
-                      dificultad_replicacion": { type: "number" },
-                      recursos_necesarios": { type: "array", items: { type: "string" } }
+                      dificultad_replicacion: { type: "number" },
+                      recursos_necesarios: { type: "array", items: { type: "string" } }
                     }
                   },
                   performance_analysis: {
