@@ -26,6 +26,7 @@ export interface ReferenceVideo {
   category?: string;
   notes?: string;
   is_favorite: boolean;
+  engagement_metrics?: any;
   created_at: string;
   updated_at: string;
 }
