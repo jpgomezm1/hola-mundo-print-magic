@@ -91,15 +91,46 @@ async function uploadToGemini(videoData: Uint8Array, requestId: string): Promise
       console.log(`[${requestId}] uploadToGemini - Attempt ${attempt}/3`);
       console.log(`[${requestId}] Uploading to Gemini Files API`, { size: videoData.length });
       
-      const formData = new FormData();
-      formData.append('file', new Blob([videoData], { type: 'video/mp4' }), 'video.mp4');
-      
-      const uploadResponse = await fetch(`https://generativelanguage.googleapis.com/upload/v1beta/files?key=${GEMINI_API_KEY}`, {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'X-Goog-Upload-Protocol': 'multipart'
+      // Use the resumable upload protocol for Gemini Files API
+      const metadata = {
+        file: {
+          display_name: `video_${requestId}`,
+          mime_type: 'video/mp4'
         }
+      };
+      
+      // Step 1: Start resumable upload
+      const startResponse = await fetch(`https://generativelanguage.googleapis.com/upload/v1beta/files?key=${GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: {
+          'X-Goog-Upload-Protocol': 'resumable',
+          'X-Goog-Upload-Command': 'start',
+          'X-Goog-Upload-Header-Content-Length': videoData.length.toString(),
+          'X-Goog-Upload-Header-Content-Type': 'video/mp4',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(metadata)
+      });
+      
+      if (!startResponse.ok) {
+        const errorText = await startResponse.text();
+        throw new Error(`Start upload failed: ${startResponse.status} - ${errorText}`);
+      }
+      
+      const uploadUrl = startResponse.headers.get('X-Goog-Upload-URL');
+      if (!uploadUrl) {
+        throw new Error('No upload URL received');
+      }
+      
+      // Step 2: Upload the file data
+      const uploadResponse = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Length': videoData.length.toString(),
+          'X-Goog-Upload-Offset': '0',
+          'X-Goog-Upload-Command': 'upload, finalize'
+        },
+        body: videoData
       });
       
       if (!uploadResponse.ok) {
