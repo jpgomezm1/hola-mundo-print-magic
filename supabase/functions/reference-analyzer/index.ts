@@ -15,6 +15,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 interface TikTokVideoData {
   url: string;
+  id?: string;
   title?: string;
   description?: string;
   duration?: number;
@@ -22,6 +23,25 @@ interface TikTokVideoData {
   username?: string;
   hashtags?: string[];
   videoUrl?: string;
+  author?: {
+    username: string;
+    nickname?: string;
+    followers?: number;
+    verified?: boolean;
+    avatar?: string;
+  };
+  stats?: {
+    views?: number;
+    likes?: number;
+    shares?: number;
+    comments?: number;
+  };
+  musicMeta?: {
+    title?: string;
+    author?: string;
+    playUrl?: string;
+  };
+  createTime?: number;
 }
 
 interface AnalyzedVideo {
@@ -36,31 +56,135 @@ interface AnalyzedVideo {
   insights: any;
 }
 
-// Simple TikTok URL validation and metadata extraction
+// Enhanced TikTok metadata extraction
 async function extractTikTokMetadata(url: string): Promise<TikTokVideoData> {
   console.log('Extracting metadata from TikTok URL:', url);
   
   try {
-    // For now, we'll extract basic info from the URL structure
-    // In a real implementation, you'd use tiktok-downloader here
     const videoId = url.match(/@[\w.]+\/video\/(\d+)/)?.[1] || 
                    url.match(/tiktok\.com\/.*\/(\d+)/)?.[1] ||
                    'unknown';
     
     const username = url.match(/@([\w.]+)\//)?.[1] || 'unknown';
     
-    // Simulate basic metadata extraction
-    // In production, integrate with tiktok-downloader library
-    return {
+    // Try to fetch HTML page to extract metadata
+    const headers = {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+      'Accept-Language': 'en-US,en;q=0.5',
+      'Accept-Encoding': 'gzip, deflate',
+      'Connection': 'keep-alive',
+      'Upgrade-Insecure-Requests': '1',
+    };
+
+    let metadata: TikTokVideoData = {
       url,
-      title: `TikTok Video ${videoId}`,
-      description: 'Video description to be extracted',
-      duration: 30, // Default duration
-      thumbnail: `https://placeholder.com/150x200?text=TikTok+${videoId}`,
+      id: videoId,
       username,
+      title: `TikTok Video ${videoId}`,
+      description: 'Video content',
+      duration: 30,
+      thumbnail: '',
       hashtags: [],
       videoUrl: url
     };
+
+    try {
+      console.log('Fetching TikTok page HTML...');
+      const response = await fetch(url, { headers });
+      
+      if (response.ok) {
+        const html = await response.text();
+        
+        // Extract JSON-LD or structured data
+        const jsonLdMatch = html.match(/<script[^>]*type="application\/ld\+json"[^>]*>([^<]+)<\/script>/);
+        if (jsonLdMatch) {
+          try {
+            const jsonData = JSON.parse(jsonLdMatch[1]);
+            if (jsonData.name) metadata.title = jsonData.name;
+            if (jsonData.description) metadata.description = jsonData.description;
+            if (jsonData.thumbnailUrl) metadata.thumbnail = jsonData.thumbnailUrl;
+            if (jsonData.duration) {
+              const durationMatch = jsonData.duration.match(/PT(\d+)S/);
+              if (durationMatch) metadata.duration = parseInt(durationMatch[1]);
+            }
+          } catch (e) {
+            console.log('Failed to parse JSON-LD data');
+          }
+        }
+
+        // Extract from meta tags
+        const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/);
+        if (titleMatch && titleMatch[1]) {
+          metadata.title = titleMatch[1].replace(' | TikTok', '');
+        }
+
+        const descriptionMatch = html.match(/<meta[^>]*name="description"[^>]*content="([^"]+)"/);
+        if (descriptionMatch) {
+          metadata.description = descriptionMatch[1];
+        }
+
+        const imageMatch = html.match(/<meta[^>]*property="og:image"[^>]*content="([^"]+)"/);
+        if (imageMatch) {
+          metadata.thumbnail = imageMatch[1];
+        }
+
+        // Extract hashtags from description
+        const hashtagMatches = metadata.description.match(/#[\w]+/g);
+        if (hashtagMatches) {
+          metadata.hashtags = hashtagMatches;
+        }
+
+        // Try to extract video stats from SIGI_STATE
+        const sigiMatch = html.match(/window\['SIGI_STATE'\]\s*=\s*({.+?});/);
+        if (sigiMatch) {
+          try {
+            const sigiData = JSON.parse(sigiMatch[1]);
+            const itemModule = sigiData?.ItemModule;
+            
+            if (itemModule) {
+              const videoData = itemModule[videoId];
+              if (videoData) {
+                metadata.stats = {
+                  views: videoData.stats?.playCount || 0,
+                  likes: videoData.stats?.diggCount || 0,
+                  shares: videoData.stats?.shareCount || 0,
+                  comments: videoData.stats?.commentCount || 0
+                };
+                
+                if (videoData.desc) metadata.description = videoData.desc;
+                if (videoData.video?.duration) metadata.duration = Math.round(videoData.video.duration);
+                
+                metadata.author = {
+                  username: videoData.author || username,
+                  nickname: videoData.nickname,
+                  verified: videoData.verified || false
+                };
+
+                if (videoData.music) {
+                  metadata.musicMeta = {
+                    title: videoData.music.title,
+                    author: videoData.music.authorName
+                  };
+                }
+              }
+            }
+          } catch (e) {
+            console.log('Failed to parse SIGI_STATE data:', e);
+          }
+        }
+
+        console.log('Successfully extracted metadata:', {
+          title: metadata.title,
+          stats: metadata.stats,
+          duration: metadata.duration
+        });
+      }
+    } catch (fetchError) {
+      console.log('Failed to fetch TikTok page, using fallback data:', fetchError);
+    }
+
+    return metadata;
   } catch (error) {
     console.error('Error extracting TikTok metadata:', error);
     throw new Error('Failed to extract video metadata');
@@ -309,7 +433,8 @@ serve(async (req) => {
           hashtags: videoData.hashtags,
           tags: tags || [],
           category: category || 'general',
-          notes: notes || ''
+          notes: notes || '',
+          engagement_metrics: videoData.stats || null
         })
         .select()
         .single();
