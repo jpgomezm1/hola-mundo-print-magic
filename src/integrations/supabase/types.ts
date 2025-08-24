@@ -205,12 +205,12 @@ export type Database = {
           editing_style: string | null
           engagement_metrics: Json | null
           extracted_insights: Json | null
-          guion_oral: string | null
+          guion_oral: string
           hashtags: string[] | null
           hook: string | null
           id: string
           is_favorite: boolean | null
-          justificacion_tema: string | null
+          justificacion_tema: string
           metrics_comments: number | null
           metrics_likes: number | null
           metrics_shares: number | null
@@ -241,12 +241,12 @@ export type Database = {
           editing_style?: string | null
           engagement_metrics?: Json | null
           extracted_insights?: Json | null
-          guion_oral?: string | null
+          guion_oral: string
           hashtags?: string[] | null
           hook?: string | null
           id?: string
           is_favorite?: boolean | null
-          justificacion_tema?: string | null
+          justificacion_tema: string
           metrics_comments?: number | null
           metrics_likes?: number | null
           metrics_shares?: number | null
@@ -277,12 +277,12 @@ export type Database = {
           editing_style?: string | null
           engagement_metrics?: Json | null
           extracted_insights?: Json | null
-          guion_oral?: string | null
+          guion_oral?: string
           hashtags?: string[] | null
           hook?: string | null
           id?: string
           is_favorite?: boolean | null
-          justificacion_tema?: string | null
+          justificacion_tema?: string
           metrics_comments?: number | null
           metrics_likes?: number | null
           metrics_shares?: number | null
