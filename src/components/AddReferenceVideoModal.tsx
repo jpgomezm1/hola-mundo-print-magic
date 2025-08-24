@@ -13,6 +13,8 @@ import { useToast } from '@/hooks/useToast';
 interface AddReferenceVideoModalProps {
   trigger?: React.ReactNode;
   onVideoAdded?: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 const VIDEO_CATEGORIES = [
@@ -50,11 +52,17 @@ const COMMON_TAGS = [
 
 export const AddReferenceVideoModal: React.FC<AddReferenceVideoModalProps> = ({
   trigger,
-  onVideoAdded
+  onVideoAdded,
+  open: externalOpen,
+  onOpenChange: externalOnOpenChange
 }) => {
   const { toast } = useToast();
   const { analyzeVideo, analyzing } = useReferenceVideos();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  
+  // Use external open state if provided, otherwise use internal state
+  const open = externalOpen !== undefined ? externalOpen : internalOpen;
+  const setOpen = externalOnOpenChange || setInternalOpen;
   const [tiktokUrl, setTiktokUrl] = useState('');
   const [category, setCategory] = useState('');
   const [notes, setNotes] = useState('');

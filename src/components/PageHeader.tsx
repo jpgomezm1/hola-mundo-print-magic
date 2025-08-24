@@ -65,10 +65,20 @@ const pageInfo: Record<string, { title: string; description: string; icon: React
     description: 'Configuración de la aplicación y preferencias',
     icon: Settings,
     color: 'text-gray-400'
+  },
+  '/reference-videos': {
+    title: 'Videos de Referencia',
+    description: 'Analiza y organiza videos de TikTok que te inspiran para crear contenido viral',
+    icon: PlayCircle,
+    color: 'text-purple-400'
   }
 };
 
-export const PageHeader = () => {
+interface PageHeaderProps {
+  action?: React.ReactNode;
+}
+
+export const PageHeader = ({ action }: PageHeaderProps = {}) => {
   const location = useLocation();
   
   // Handle video detail pages
@@ -83,18 +93,25 @@ export const PageHeader = () => {
 
   return (
     <div className="mb-xl">
-      <div className="flex items-center gap-lg mb-sm">
-        <div className={`w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center shadow-glow`}>
-          <IconComponent className={`w-6 h-6 ${currentPage.color}`} />
+      <div className="flex items-center justify-between gap-lg mb-sm">
+        <div className="flex items-center gap-lg">
+          <div className={`w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center shadow-glow`}>
+            <IconComponent className={`w-6 h-6 ${currentPage.color}`} />
+          </div>
+          <div>
+            <h1 className="text-4xl font-bold text-text-primary">
+              {isVideoDetail ? 'Video Detail' : currentPage.title}
+            </h1>
+            <p className="text-text-secondary mt-xs">
+              {isVideoDetail ? 'Análisis detallado del rendimiento del video' : currentPage.description}
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-4xl font-bold text-text-primary">
-            {isVideoDetail ? 'Video Detail' : currentPage.title}
-          </h1>
-          <p className="text-text-secondary mt-xs">
-            {isVideoDetail ? 'Análisis detallado del rendimiento del video' : currentPage.description}
-          </p>
-        </div>
+        {action && (
+          <div className="flex-shrink-0">
+            {action}
+          </div>
+        )}
       </div>
     </div>
   );

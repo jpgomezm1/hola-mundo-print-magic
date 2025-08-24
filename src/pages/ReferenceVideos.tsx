@@ -53,6 +53,7 @@ export default function ReferenceVideos() {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [adaptedContent, setAdaptedContent] = useState<string>('');
   const [showAdaptedContent, setShowAdaptedContent] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   // Get filter options
   const categories = getCategories();
@@ -183,7 +184,14 @@ export default function ReferenceVideos() {
 
   return (
     <div className="space-y-6">
-      <PageHeader />
+      <PageHeader 
+        action={
+          <Button onClick={() => setShowAddModal(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Agregar Referente
+          </Button>
+        }
+      />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -446,6 +454,12 @@ export default function ReferenceVideos() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Add Reference Video Modal */}
+      <AddReferenceVideoModal 
+        open={showAddModal}
+        onOpenChange={setShowAddModal}
+      />
     </div>
   );
 }
