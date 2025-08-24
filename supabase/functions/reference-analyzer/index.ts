@@ -1,580 +1,478 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.21.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const geminiApiKey = Deno.env.get('GEMINI_API_KEY')!;
+const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+// Initialize Supabase client with service role for database operations
+const supabaseAdmin = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
-interface TikTokVideoData {
-  url: string;
-  id?: string;
-  title?: string;
-  description?: string;
-  duration?: number;
-  thumbnail?: string;
-  username?: string;
-  hashtags?: string[];
-  videoUrl?: string;
-  author?: {
-    username: string;
-    nickname?: string;
-    followers?: number;
-    verified?: boolean;
-    avatar?: string;
-  };
-  stats?: {
-    views?: number;
-    likes?: number;
-    shares?: number;
-    comments?: number;
-  };
-  musicMeta?: {
-    title?: string;
-    author?: string;
-    playUrl?: string;
-  };
-  createTime?: number;
+interface AnalyzeRequest {
+  url?: string;
+  storage_path?: string;
+  video_id?: string;
+  user_id?: string;
 }
 
-interface AnalyzedVideo {
+interface VideoAnalysis {
+  guion_oral: string;
   hook: string;
-  script: string;
-  editing_style: string;
-  cta_type: string;
-  video_theme: string;
-  tone_style: string;
-  visual_elements: string[];
-  audio_style: string;
-  insights: any;
+  cta: string;
+  estilo_edicion: string;
+  tema_principal: 'Entretener' | 'Identificar' | 'Activar' | 'Educar';
+  justificacion_tema: string;
 }
 
-// Enhanced TikTok metadata extraction with multiple methods
-async function extractTikTokMetadata(url: string): Promise<TikTokVideoData> {
-  console.log('Extracting metadata from TikTok URL:', url);
+interface VideoMetrics {
+  views: number;
+  likes: number;
+  comments: number;
+  shares: number;
+}
+
+function generateRequestId(): string {
+  return Math.random().toString(36).substring(2, 15);
+}
+
+async function fetchVideoFromUrl(url: string): Promise<Uint8Array> {
+  console.log('[FETCH] Attempting to download video from URL...');
   
-  try {
-    const videoId = url.match(/@[\w.]+\/video\/(\d+)/)?.[1] || 
-                   url.match(/tiktok\.com\/.*\/(\d+)/)?.[1] ||
-                   'unknown';
-    
-    const username = url.match(/@([\w.]+)\//)?.[1] || 'unknown';
-    
-    let metadata: TikTokVideoData = {
-      url,
-      id: videoId,
-      username,
-      title: `TikTok Video ${videoId}`,
-      description: 'Video content',
-      duration: 30,
-      thumbnail: '',
-      hashtags: [],
-      videoUrl: url
-    };
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Accept': 'video/*,*/*;q=0.9',
+    },
+  });
 
-    // Method 1: Try to extract from TikTok oEmbed API
-    try {
-      console.log('Trying TikTok oEmbed API...');
-      const oembedUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`;
-      const oembedResponse = await fetch(oembedUrl, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        }
-      });
-      
-      if (oembedResponse.ok) {
-        const oembedData = await oembedResponse.json();
-        console.log('oEmbed data extracted successfully');
-        
-        if (oembedData.title) metadata.title = oembedData.title;
-        if (oembedData.author_name) metadata.username = oembedData.author_name;
-        if (oembedData.thumbnail_url) metadata.thumbnail = oembedData.thumbnail_url;
-        
-        // Extract description from HTML if available
-        if (oembedData.html) {
-          const descMatch = oembedData.html.match(/data-video-description="([^"]+)"/);
-          if (descMatch) metadata.description = descMatch[1];
-        }
-      }
-    } catch (e) {
-      console.log('oEmbed method failed:', e.message);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch video: ${response.status} ${response.statusText}`);
+  }
+
+  const arrayBuffer = await response.arrayBuffer();
+  return new Uint8Array(arrayBuffer);
+}
+
+async function getVideoFromStorage(storagePath: string): Promise<Uint8Array> {
+  console.log('[STORAGE] Fetching video from Supabase Storage...');
+  
+  const { data, error } = await supabaseAdmin.storage
+    .from('videos')
+    .download(storagePath);
+
+  if (error) {
+    throw new Error(`Failed to fetch from storage: ${error.message}`);
+  }
+
+  return new Uint8Array(await data.arrayBuffer());
+}
+
+async function uploadToGemini(videoData: Uint8Array, requestId: string): Promise<any> {
+  console.log(`[${requestId}] Uploading video to Gemini...`);
+  
+  const formData = new FormData();
+  const blob = new Blob([videoData], { type: 'video/mp4' });
+  
+  formData.append('file', blob, 'video.mp4');
+  formData.append('displayName', `reference-video-${requestId}`);
+
+  const uploadResponse = await fetch(
+    `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${GEMINI_API_KEY}`,
+    {
+      method: 'POST',
+      body: formData,
     }
+  );
 
-    // Method 2: Try scraping with different approach
-    try {
-      console.log('Trying direct page scraping...');
-      const response = await fetch(url, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-          'Accept-Language': 'en-US,en;q=0.5',
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
-      });
-      
-      if (response.ok) {
-        const html = await response.text();
-        console.log('Page HTML fetched successfully');
-        
-        // Extract structured data
-        const scriptMatches = html.match(/<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__" type="application\/json"[^>]*>([^<]+)<\/script>/);
-        if (scriptMatches) {
-          try {
-            const jsonData = JSON.parse(scriptMatches[1]);
-            const itemInfo = jsonData?.['__DEFAULT_SCOPE__']?.['webapp.video-detail']?.itemInfo?.itemStruct;
-            
-            if (itemInfo) {
-              console.log('Structured data found in page');
-              
-              if (itemInfo.desc) metadata.description = itemInfo.desc;
-              if (itemInfo.video?.duration) metadata.duration = Math.round(itemInfo.video.duration);
-              if (itemInfo.video?.cover) metadata.thumbnail = itemInfo.video.cover;
-              
-              // Extract stats
-              if (itemInfo.stats) {
-                metadata.stats = {
-                  views: itemInfo.stats.playCount || 0,
-                  likes: itemInfo.stats.diggCount || 0,
-                  shares: itemInfo.stats.shareCount || 0,
-                  comments: itemInfo.stats.commentCount || 0
-                };
-              }
-              
-              // Extract author info
-              if (itemInfo.author) {
-                metadata.author = {
-                  username: itemInfo.author.uniqueId || username,
-                  nickname: itemInfo.author.nickname,
-                  verified: itemInfo.author.verified || false,
-                  followers: itemInfo.author.followerCount,
-                  avatar: itemInfo.author.avatarMedium
-                };
-              }
-              
-              // Extract music info
-              if (itemInfo.music) {
-                metadata.musicMeta = {
-                  title: itemInfo.music.title,
-                  author: itemInfo.music.authorName,
-                  playUrl: itemInfo.music.playUrl
-                };
-              }
-              
-              // Extract hashtags from challenges
-              if (itemInfo.challenges) {
-                metadata.hashtags = itemInfo.challenges.map((c: any) => `#${c.title}`);
-              }
-              
-              // If no hashtags from challenges, extract from description
-              if (!metadata.hashtags?.length && metadata.description) {
-                const hashtagMatches = metadata.description.match(/#[\w]+/g);
-                if (hashtagMatches) {
-                  metadata.hashtags = hashtagMatches;
+  if (!uploadResponse.ok) {
+    throw new Error(`Failed to upload to Gemini: ${uploadResponse.statusText}`);
+  }
+
+  const uploadResult = await uploadResponse.json();
+  console.log(`[${requestId}] Video uploaded to Gemini, processing...`);
+
+  // Wait for processing
+  let fileStatus = uploadResult;
+  while (fileStatus.state === 'PROCESSING') {
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    
+    const statusResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/${fileStatus.name}?key=${GEMINI_API_KEY}`
+    );
+    
+    if (statusResponse.ok) {
+      fileStatus = await statusResponse.json();
+    } else {
+      break;
+    }
+  }
+
+  if (fileStatus.state === 'FAILED') {
+    throw new Error('Video processing failed in Gemini');
+  }
+
+  console.log(`[${requestId}] Video processed successfully`);
+  return fileStatus;
+}
+
+async function analyzeWithGemini(geminiFile: any, requestId: string): Promise<VideoAnalysis> {
+  console.log(`[${requestId}] Analyzing video content with Gemini 1.5 Pro...`);
+
+  const prompt = `
+Analiza este video de TikTok y proporciona la siguiente información en formato JSON:
+
+{
+    "guion_oral": "Transcripción completa de todo lo que se dice en el video",
+    "hook": "Descripción del gancho inicial usado para captar atención (primeros 3 segundos)",
+    "cta": "Call to Action utilizado (si existe), qué acción se pide al viewer - SOLO TEXTO",
+    "estilo_edicion": "Descripción del estilo de edición: cortes, transiciones, efectos, música, ritmo, etc.",
+    "tema_principal": "Una de estas opciones: Entretener, Identificar, Activar, Educar",
+    "justificacion_tema": "Breve explicación de por qué clasificaste el video en esa categoría"
+}
+
+IMPORTANTE: 
+- Todos los campos deben ser TEXTO PLANO, no objetos JSON anidados
+- El campo "cta" debe ser una descripción en texto, no un objeto con propiedades
+- Si hay un CTA complejo, descríbelo en palabras simples
+
+Definiciones de los temas:
+- Entretener: Provocar risa, incomodidad o sorpresa, contenido diseñado para enganchar y quedarse en la cabeza
+- Identificar: Que la gente diga "yo soy ese" o "eso me pasa a mí", reforzando la conexión emocional
+- Activar: Motivar a compartir o comentar, unirse a la comunidad o dar un paso más en el funnel, con CTAs claros
+- Educar: Explicar herramientas, conceptos o procesos
+
+Responde únicamente con el JSON válido, sin texto adicional.
+  `;
+
+  const analysisResponse = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                fileData: {
+                  mimeType: geminiFile.mimeType,
+                  fileUri: geminiFile.uri
                 }
+              },
+              {
+                text: prompt
               }
-            }
-          } catch (parseError) {
-            console.log('Failed to parse structured data:', parseError.message);
+            ]
           }
-        }
-        
-        // Fallback: Extract from meta tags
-        const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/);
-        if (titleMatch && !metadata.title.includes('Video')) {
-          metadata.title = titleMatch[1].replace(' | TikTok', '').trim();
-        }
-        
-        const descriptionMatch = html.match(/<meta[^>]*name="description"[^>]*content="([^"]+)"/);
-        if (descriptionMatch && metadata.description === 'Video content') {
-          metadata.description = descriptionMatch[1];
-        }
-        
-        const imageMatch = html.match(/<meta[^>]*property="og:image"[^>]*content="([^"]+)"/);
-        if (imageMatch && !metadata.thumbnail) {
-          metadata.thumbnail = imageMatch[1];
-        }
-      }
-    } catch (fetchError) {
-      console.log('Direct scraping failed:', fetchError.message);
+        ]
+      })
     }
+  );
 
-    // Ensure we have at least basic data
-    if (!metadata.hashtags) metadata.hashtags = [];
-    if (!metadata.description || metadata.description === 'Video content') {
-      metadata.description = `TikTok video by @${metadata.username}`;
-    }
-    
-    console.log('Final metadata extracted:', {
-      title: metadata.title,
-      description: metadata.description,
-      stats: metadata.stats,
-      duration: metadata.duration,
-      hashtags: metadata.hashtags?.length || 0
-    });
-
-    return metadata;
-  } catch (error) {
-    console.error('Error extracting TikTok metadata:', error);
-    throw new Error('Failed to extract video metadata');
+  if (!analysisResponse.ok) {
+    throw new Error(`Gemini analysis failed: ${analysisResponse.statusText}`);
   }
-}
 
-// Simplified video analysis using Gemini with text-based approach
-async function analyzeVideoContent(
-  videoData: TikTokVideoData, 
-  accountContext?: any
-): Promise<AnalyzedVideo> {
-  console.log('Analyzing video content with Gemini AI');
+  const result = await analysisResponse.json();
   
-  const prompt = `Eres un experto analizador de contenido viral de TikTok con más de 10 años de experiencia. Analiza este video de TikTok basándote en la información disponible y proporciona un análisis detallado.
+  if (!result.candidates?.[0]?.content?.parts?.[0]?.text) {
+    throw new Error('No analysis text returned from Gemini');
+  }
 
-INFORMACIÓN DEL VIDEO:
-- URL: ${videoData.url}
-- Título: ${videoData.title}
-- Descripción: ${videoData.description}
-- Creador: @${videoData.username}
-- Duración: ${videoData.duration} segundos
-- Hashtags: ${videoData.hashtags?.join(', ') || 'No disponibles'}
-- Views: ${videoData.stats?.views?.toLocaleString() || 'No disponible'}
-- Likes: ${videoData.stats?.likes?.toLocaleString() || 'No disponible'}
-- Comentarios: ${videoData.stats?.comments?.toLocaleString() || 'No disponible'}
-- Shares: ${videoData.stats?.shares?.toLocaleString() || 'No disponible'}
-- Música: ${videoData.musicMeta?.title || 'No disponible'} - ${videoData.musicMeta?.author || ''}
-
-CONTEXTO DE LA CUENTA DEL USUARIO:
-- Misión: ${accountContext?.mission || 'No definida'}
-- Temas de contenido: ${accountContext?.content_themes?.join(', ') || 'Generales'}
-- Tono: ${accountContext?.tone_guide || 'Profesional pero accesible'}
-
-INSTRUCCIONES:
-Basándote en el título, descripción, hashtags, métricas y contexto, proporciona un análisis completo en formato JSON.
-
-Responde ÚNICAMENTE con un JSON válido:`;
-
-  const userMessage = `{
-  "guion_oral": "Basándote en la descripción y título, infiere el guión oral probable del video",
-  "hook": "Analiza el título y descripción para identificar la técnica de hook utilizada",
-  "cta": "Identifica el tipo de call to action basándote en los hashtags y descripción",
-  "estilo_edicion": "Infiere el estilo de edición basándote en las métricas, hashtags y tipo de contenido",
-  "tema_principal": "Clasifica en: Entretener, Identificar, Activar, o Educar",
-  "justificacion_tema": "Explica por qué clasificaste así basándote en la evidencia disponible",
-  "elementos_virales": ["Lista de elementos que hacen viral este contenido"],
-  "audiencia_objetivo": "Describe la audiencia objetivo basándote en el contenido y creador",
-  "tips_replicacion": ["Consejos específicos para replicar el éxito de este video"],
-  "score_viral": "Puntaje de 1-10 del potencial viral basándote en las métricas",
-  "analisis_metricas": "Análisis de las métricas de engagement y qué las impulsa"
-}`;
+  let analysisText = result.candidates[0].content.parts[0].text.trim();
+  
+  // Clean JSON fences if present
+  if (analysisText.startsWith('```json')) {
+    analysisText = analysisText.slice(7, -3);
+  } else if (analysisText.startsWith('```')) {
+    analysisText = analysisText.slice(3, -3);
+  }
 
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${geminiApiKey}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: `${prompt}\n\n${userMessage}`
-          }]
-        }],
-        generationConfig: {
-          temperature: 0.3,
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: 4096,
-        },
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Gemini API error details:', errorText);
-      throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
-    }
-
-    const data = await response.json();
-    console.log('Gemini response received successfully');
-    
-    const aiResponse = data.candidates[0].content.parts[0].text;
-    
-    try {
-      // Clean the response
-      let cleanResponse = aiResponse.trim();
-      if (cleanResponse.startsWith('```json')) {
-        cleanResponse = cleanResponse.slice(7, -3);
-      } else if (cleanResponse.startsWith('```')) {
-        cleanResponse = cleanResponse.slice(3, -3);
-      }
-      
-      const parsed = JSON.parse(cleanResponse);
-      console.log('Successfully parsed Gemini response');
-      
-      // Transform to expected format
-      return {
-        hook: parsed.hook || "Hook analizado por Gemini",
-        script: parsed.guion_oral || "Guión inferido por análisis",
-        editing_style: parsed.estilo_edicion || "Estilo estándar",
-        cta_type: parsed.cta || "engagement",
-        video_theme: parsed.tema_principal || "contenido general",
-        tone_style: parsed.justificacion_tema || "neutral",
-        visual_elements: parsed.elementos_virales || ["elementos básicos"],
-        audio_style: `Música: ${videoData.musicMeta?.title || 'No disponible'}`,
-        insights: {
-          viral_factors: parsed.elementos_virales || ["engagement"],
-          target_audience: parsed.audiencia_objetivo || "audiencia general",
-          replication_tips: parsed.tips_replicacion || ["seguir mejores prácticas"],
-          viral_score: parsed.score_viral || 5,
-          metrics_analysis: parsed.analisis_metricas || "Análisis basado en datos disponibles",
-          detailed_analysis: parsed
-        }
-      };
-    } catch (parseError) {
-      console.error('Error parsing Gemini response:', parseError);
-      console.log('Raw response:', aiResponse);
-      
-      // Return fallback analysis
-      return {
-        hook: "Hook extraído de título y descripción",
-        script: videoData.description || "Contenido basado en metadatos",
-        editing_style: "Estilo inferido de métricas",
-        cta_type: "engagement",
-        video_theme: "contenido general",
-        tone_style: "neutral",
-        visual_elements: videoData.hashtags || ["elementos básicos"],
-        audio_style: `Música: ${videoData.musicMeta?.title || 'estándar'}`,
-        insights: {
-          viral_factors: ["engagement"],
-          target_audience: "audiencia general",
-          replication_tips: ["analizar métricas disponibles"],
-          parse_error: "Error en parsing de respuesta",
-          raw_response: aiResponse.substring(0, 500) // Truncate for safety
-        }
-      };
-    }
-  } catch (error) {
-    console.error('Error calling Gemini API:', error);
-    throw error;
+    const analysis = JSON.parse(analysisText);
+    console.log(`[${requestId}] Analysis completed - Topic: ${analysis.tema_principal}`);
+    return analysis;
+  } catch (parseError) {
+    console.error(`[${requestId}] Failed to parse analysis JSON:`, parseError);
+    throw new Error('Failed to parse analysis response');
   }
 }
 
-// Generate adapted content using Gemini
-async function generateAdaptedContent(
-  referenceData: any,
-  userPrompt: string,
-  accountContext?: any
-): Promise<{ adapted_content: string }> {
-  console.log('Generating adapted content with Gemini');
+async function generateTags(analysis: VideoAnalysis, requestId: string): Promise<string[]> {
+  console.log(`[${requestId}] Generating AI tags...`);
 
-  const systemPrompt = `Eres un creador experto de contenido para TikTok especializado en adaptar videos exitosos. Tu trabajo es tomar elementos virales de un video de referencia y adaptarlos perfectamente al contexto y nicho específico del usuario.
+  const tagPrompt = `
+Basándote en este análisis de video de TikTok, genera entre 5-10 tags relevantes que describan el contenido:
 
-CONTEXTO DE LA CUENTA DEL USUARIO:
-- Misión: ${accountContext?.mission || 'No definida'}
-- Temas de contenido: ${accountContext?.content_themes?.join(', ') || 'Generales'}
-- Tono de marca: ${accountContext?.tone_guide || 'Profesional pero accesible'}
-- Posicionamiento: ${accountContext?.positioning || 'No definido'}
-- NO hacer: ${accountContext?.do_not_do?.join(', ') || 'Nada específico'}
+Guión: ${analysis.guion_oral}
+Hook: ${analysis.hook}
+Estilo: ${analysis.estilo_edicion}
+Tema: ${analysis.tema_principal}
+CTA: ${analysis.cta}
 
-ANÁLISIS DEL VIDEO DE REFERENCIA:
-- Hook original: ${referenceData.hook}
-- Script original: ${referenceData.script}
-- Estilo de edición: ${referenceData.editing_style}
-- Tema: ${referenceData.video_theme}
-- Tono: ${referenceData.tone_style}
-- Elementos virales identificados: ${referenceData.extracted_insights?.viral_factors?.join(', ') || 'engagement general'}
+Devuelve solo los tags separados por comas, sin numeración ni texto adicional.
+Ejemplo: marketing digital, storytelling, engagement, viral content, emprendimiento
+  `;
 
-INSTRUCCIONES PARA ADAPTACIÓN:
-1. Mantén los elementos virales pero cambia el contexto al nicho del usuario
-2. Conserva la estructura narrativa que funciona
-3. Adapta el hook manteniendo la técnica que captura atención
-4. Modifica el contenido para que sea relevante al audience del usuario
-5. Mantén la cadencia y ritmo del original
-6. Adapta los elementos visuales al contexto del usuario
-
-Proporciona una adaptación completa y específica que el usuario pueda implementar inmediatamente.`;
-
-  const userMessage = `SOLICITUD DE ADAPTACIÓN: ${userPrompt}
-
-Basándote en el video de referencia analizado, crea una adaptación completa que incluya:
-
-1. HOOK ADAPTADO: Reescribe el hook manteniendo la técnica viral pero aplicándola a mi nicho
-2. SCRIPT COMPLETO ADAPTADO: Guión palabra por palabra adaptado a mi contexto
-3. ELEMENTOS VISUALES SUGERIDOS: Qué props, vestuario, setting necesito
-4. RECOMENDACIONES DE EDICIÓN: Cómo replicar el estilo de edición viral
-5. CTA ADAPTADO: Call to action específico para mi audiencia
-6. TIPS DE IMPLEMENTACIÓN: Pasos específicos para ejecutar este contenido
-
-Sé específico y actionable. Quiero poder tomar tu respuesta e implementarla inmediatamente.`;
-
-  try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${geminiApiKey}`, {
+  const tagResponse = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`,
+    {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: `${systemPrompt}\n\n${userMessage}`
-          }]
-        }],
-        generationConfig: {
-          temperature: 0.7,
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: 4096,
-        },
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Gemini API error: ${response.statusText}`);
+        contents: [{ parts: [{ text: tagPrompt }] }]
+      })
     }
+  );
 
-    const data = await response.json();
-    const aiResponse = data.candidates[0].content.parts[0].text;
-    
-    return {
-      adapted_content: aiResponse
-    };
+  if (!tagResponse.ok) {
+    console.warn(`[${requestId}] Failed to generate tags, using defaults`);
+    return ['video-analizado', 'tiktok', 'contenido'];
+  }
+
+  const tagResult = await tagResponse.json();
+  const tagText = tagResult.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+  
+  const tags = tagText
+    .split(',')
+    .map((tag: string) => tag.trim().toLowerCase())
+    .filter((tag: string) => tag.length > 0)
+    .slice(0, 10);
+
+  return tags.length > 0 ? tags : ['video-analizado', 'tiktok', 'contenido'];
+}
+
+function mapTemaToTam(tema: string, analysis: VideoAnalysis): string {
+  // Basic mapping
+  const basicMapping: Record<string, string> = {
+    'Entretener': 'Entretenimiento',
+    'Identificar': 'Storytelling',
+    'Activar': 'Ventas',
+    'Educar': 'Educativo'
+  };
+
+  let tam = basicMapping[tema] || 'Entretenimiento';
+
+  // Heuristic refinement
+  const guionLower = analysis.guion_oral.toLowerCase();
+  const hookLower = analysis.hook.toLowerCase();
+  const ctaLower = analysis.cta.toLowerCase();
+
+  // Check for tutorial keywords
+  if (guionLower.includes('paso') || guionLower.includes('cómo') || 
+      guionLower.includes('tutorial') || guionLower.includes('enseñar') ||
+      hookLower.includes('aprende') || hookLower.includes('tutorial')) {
+    tam = 'Tutorial';
+  }
+  
+  // Check for product keywords
+  else if (guionLower.includes('producto') || guionLower.includes('comprar') ||
+           guionLower.includes('precio') || guionLower.includes('descuento') ||
+           ctaLower.includes('compra') || ctaLower.includes('link')) {
+    tam = 'Producto';
+  }
+
+  return tam;
+}
+
+async function cleanupGeminiFile(geminiFile: any, requestId: string): Promise<void> {
+  try {
+    await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/${geminiFile.name}?key=${GEMINI_API_KEY}`,
+      { method: 'DELETE' }
+    );
+    console.log(`[${requestId}] Cleaned up Gemini file`);
   } catch (error) {
-    console.error('Error generating adapted content with Gemini:', error);
-    throw error;
+    console.warn(`[${requestId}] Failed to cleanup Gemini file:`, error);
   }
 }
 
 serve(async (req) => {
+  const requestId = generateRequestId();
+  console.log(`[${requestId}] New request: ${req.method} ${req.url}`);
+
+  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
+  if (req.method !== 'POST') {
+    return new Response(
+      JSON.stringify({ error: 'Method not allowed' }),
+      { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
   try {
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      throw new Error('No authorization header');
+    const body: AnalyzeRequest = await req.json();
+    console.log(`[${requestId}] Request body:`, { 
+      hasUrl: !!body.url, 
+      hasStoragePath: !!body.storage_path,
+      videoId: body.video_id 
+    });
+
+    // Validate input
+    if (!body.url && !body.storage_path) {
+      return new Response(
+        JSON.stringify({ error: 'Either url or storage_path is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser(
-      authHeader.replace('Bearer ', '')
+    // Get user from JWT token
+    const authHeader = req.headers.get('authorization');
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(
+      authHeader?.replace('Bearer ', '') || ''
     );
 
     if (authError || !user) {
-      throw new Error('Invalid user');
-    }
-
-    const { action, ...params } = await req.json();
-
-    if (action === 'analyze') {
-      const { tiktok_url, tags, category, notes } = params;
-      
-      // Get user's account context
-      const { data: accountContext } = await supabase
-        .from('tiktok_account_contexts')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      // Extract video metadata
-      const videoData = await extractTikTokMetadata(tiktok_url);
-      
-      // Analyze with AI
-      const analysis = await analyzeVideoContent(videoData, accountContext);
-      
-      // Save to database
-      const { data: savedVideo, error: saveError } = await supabase
-        .from('reference_videos')
-        .insert({
-          user_id: user.id,
-          tiktok_url,
-          title: videoData.title,
-          description: videoData.description,
-          hook: analysis.hook,
-          script: analysis.script,
-          editing_style: analysis.editing_style,
-          duration_seconds: videoData.duration,
-          cta_type: analysis.cta_type,
-          video_theme: analysis.video_theme,
-          tone_style: analysis.tone_style,
-          visual_elements: analysis.visual_elements,
-          audio_style: analysis.audio_style,
-          extracted_insights: analysis.insights,
-          thumbnail_url: videoData.thumbnail,
-          creator_username: videoData.username,
-          hashtags: videoData.hashtags,
-          tags: tags || [],
-          category: category || 'general',
-          notes: notes || '',
-          engagement_metrics: videoData.stats || null
-        })
-        .select()
-        .single();
-
-      if (saveError) throw saveError;
-
-      return new Response(JSON.stringify({
-        success: true,
-        reference_video: savedVideo,
-        analysis
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-
-    } else if (action === 'adapt') {
-      const { reference_id, adaptation_prompt } = params;
-      
-      // Get reference video
-      const { data: referenceVideo } = await supabase
-        .from('reference_videos')
-        .select('*')
-        .eq('id', reference_id)
-        .eq('user_id', user.id)
-        .single();
-
-      if (!referenceVideo) {
-        throw new Error('Reference video not found');
-      }
-
-      // Get user's account context
-      const { data: accountContext } = await supabase
-        .from('tiktok_account_contexts')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      // Generate adapted content
-      const adaptedContent = await generateAdaptedContent(
-        referenceVideo,
-        adaptation_prompt,
-        accountContext
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
-
-      return new Response(JSON.stringify({
-        success: true,
-        adapted_content: adaptedContent.adapted_content,
-        reference_video: referenceVideo
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-
-    } else {
-      throw new Error('Invalid action');
     }
+
+    // Step 1: Get video binary data
+    let videoData: Uint8Array;
+    
+    try {
+      if (body.storage_path) {
+        console.log(`[${requestId}] Using storage path: ${body.storage_path}`);
+        videoData = await getVideoFromStorage(body.storage_path);
+      } else {
+        console.log(`[${requestId}] Using URL: ${body.url}`);
+        videoData = await fetchVideoFromUrl(body.url!);
+      }
+    } catch (fetchError) {
+      if (body.url && !body.storage_path) {
+        console.error(`[${requestId}] URL fetch blocked:`, fetchError);
+        return new Response(
+          JSON.stringify({ 
+            error: 'URL fetch blocked', 
+            message: 'Please upload the video to storage first',
+            code: 'FETCH_BLOCKED'
+          }),
+          { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      throw fetchError;
+    }
+
+    // Step 2: Upload to Gemini
+    const geminiFile = await uploadToGemini(videoData, requestId);
+
+    // Step 3: Analyze with Gemini
+    let analysis: VideoAnalysis;
+    try {
+      analysis = await analyzeWithGemini(geminiFile, requestId);
+    } catch (analysisError) {
+      console.error(`[${requestId}] Analysis failed:`, analysisError);
+      analysis = {
+        guion_oral: "Error en análisis",
+        hook: "Error en análisis", 
+        cta: "Error en análisis",
+        estilo_edicion: "Error en análisis",
+        tema_principal: "Entretener",
+        justificacion_tema: `Error: ${analysisError}`
+      };
+    }
+
+    // Step 4: Generate derived values
+    const tags_ai = await generateTags(analysis, requestId);
+    const tam_ai = mapTemaToTam(analysis.tema_principal, analysis);
+
+    // Step 5: Create response payload
+    const videoId = body.video_id || `video_${Date.now()}`;
+    const response = {
+      video_id: videoId,
+      thumbnail_url: null, // TODO: Could extract frame from video
+      duration_seconds: null, // TODO: Could analyze video metadata
+      metrics: {
+        views: 0,
+        likes: 0,
+        comments: 0,
+        shares: 0
+      },
+      guion_oral: analysis.guion_oral,
+      hook: analysis.hook,
+      cta: analysis.cta,
+      estilo_edicion: analysis.estilo_edicion,
+      tema_principal: analysis.tema_principal,
+      justificacion_tema: analysis.justificacion_tema,
+      tags_ai,
+      tam_ai,
+      created_at: new Date().toISOString()
+    };
+
+    // Step 6: Save to database
+    try {
+      const { data: insertData, error: insertError } = await supabaseAdmin
+        .from('reference_videos')
+        .upsert({
+          id: videoId,
+          user_id: user.id,
+          tiktok_url: body.url || '',
+          storage_path: body.storage_path || null,
+          guion_oral: analysis.guion_oral,
+          hook: analysis.hook,
+          cta_type: analysis.cta,
+          editing_style: analysis.estilo_edicion,
+          video_theme: analysis.tema_principal,
+          justificacion_tema: analysis.justificacion_tema,
+          tags_ai: tags_ai,
+          tam_ai: tam_ai,
+          metrics_views: 0,
+          metrics_likes: 0,
+          metrics_comments: 0,
+          metrics_shares: 0,
+        }, { 
+          onConflict: 'id' 
+        });
+
+      if (insertError) {
+        console.error(`[${requestId}] Database insert failed:`, insertError);
+      } else {
+        console.log(`[${requestId}] Saved to database successfully`);
+      }
+    } catch (dbError) {
+      console.error(`[${requestId}] Database error:`, dbError);
+    }
+
+    // Step 7: Cleanup
+    await cleanupGeminiFile(geminiFile, requestId);
+
+    console.log(`[${requestId}] Analysis completed successfully`);
+    
+    return new Response(
+      JSON.stringify(response),
+      { 
+        status: 200, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
 
   } catch (error) {
-    console.error('Error in reference-analyzer function:', error);
-    return new Response(JSON.stringify({ 
-      error: error.message,
-      success: false
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error(`[${requestId}] Error:`, error);
+    
+    return new Response(
+      JSON.stringify({ 
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
   }
 });

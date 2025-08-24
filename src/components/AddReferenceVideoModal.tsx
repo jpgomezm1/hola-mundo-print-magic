@@ -122,10 +122,8 @@ export const AddReferenceVideoModal: React.FC<AddReferenceVideoModalProps> = ({
 
     try {
       await analyzeVideo({
-        tiktok_url: tiktokUrl,
-        tags: selectedTags,
-        category: category || 'otros',
-        notes: notes.trim()
+        url: tiktokUrl,
+        video_id: `video_${Date.now()}`
       });
 
       resetForm();
