@@ -7,7 +7,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
+const GOOGLE_API_KEY = Deno.env.get('GOOGLE_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
@@ -74,51 +74,79 @@ async function getVideoFromStorage(storagePath: string): Promise<Uint8Array> {
 }
 
 async function uploadToGemini(videoData: Uint8Array, requestId: string): Promise<any> {
-  console.log(`[${requestId}] Uploading video to Gemini...`);
+  console.log(`[${requestId}] Uploading video to Gemini Files API...`);
   
-  const formData = new FormData();
-  const blob = new Blob([videoData], { type: 'video/mp4' });
-  
-  formData.append('file', blob, 'video.mp4');
-  formData.append('displayName', `reference-video-${requestId}`);
+  // Step 1: Start resumable upload
+  const startResponse = await fetch('https://generativelanguage.googleapis.com/upload/v1beta/files?key=' + GOOGLE_API_KEY, {
+    method: 'POST',
+    headers: {
+      'X-Goog-Upload-Protocol': 'resumable',
+      'X-Goog-Upload-Command': 'start',
+      'X-Goog-Upload-Header-Content-Length': videoData.length.toString(),
+      'X-Goog-Upload-Header-Content-Type': 'video/mp4',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      file: {
+        display_name: `tiktok_video_${requestId}`,
+      }
+    }),
+  });
 
-  const uploadResponse = await fetch(
-    `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${GEMINI_API_KEY}`,
-    {
-      method: 'POST',
-      body: formData,
-    }
-  );
+  if (!startResponse.ok) {
+    const errorText = await startResponse.text();
+    console.error(`[${requestId}] Gemini upload start error:`, errorText);
+    throw new Error(`Failed to start upload to Gemini: ${startResponse.statusText}`);
+  }
+
+  const uploadUrl = startResponse.headers.get('X-Goog-Upload-URL');
+  if (!uploadUrl) {
+    throw new Error('No upload URL received from Gemini');
+  }
+
+  console.log(`[${requestId}] Upload URL received, uploading file...`);
+
+  // Step 2: Upload the actual file data
+  const uploadResponse = await fetch(uploadUrl, {
+    method: 'PUT',
+    headers: {
+      'Content-Length': videoData.length.toString(),
+      'X-Goog-Upload-Offset': '0',
+      'X-Goog-Upload-Command': 'upload, finalize',
+    },
+    body: videoData,
+  });
 
   if (!uploadResponse.ok) {
-    throw new Error(`Failed to upload to Gemini: ${uploadResponse.statusText}`);
+    const errorText = await uploadResponse.text();
+    console.error(`[${requestId}] Gemini file upload error:`, errorText);
+    throw new Error(`Failed to upload file to Gemini: ${uploadResponse.statusText}`);
   }
 
   const uploadResult = await uploadResponse.json();
-  console.log(`[${requestId}] Video uploaded to Gemini, processing...`);
+  console.log(`[${requestId}] File uploaded to Gemini successfully:`, uploadResult.file?.name);
 
-  // Wait for processing
-  let fileStatus = uploadResult;
-  while (fileStatus.state === 'PROCESSING') {
+  // Step 3: Wait for processing
+  let file = uploadResult.file;
+  while (file.state === 'PROCESSING') {
+    console.log(`[${requestId}] File is processing, waiting...`);
     await new Promise(resolve => setTimeout(resolve, 3000));
     
-    const statusResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/${fileStatus.name}?key=${GEMINI_API_KEY}`
-    );
-    
+    const statusResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/files/${file.name}?key=${GOOGLE_API_KEY}`);
     if (statusResponse.ok) {
-      fileStatus = await statusResponse.json();
+      const statusResult = await statusResponse.json();
+      file = statusResult;
     } else {
       break;
     }
   }
 
-  if (fileStatus.state === 'FAILED') {
-    throw new Error('Video processing failed in Gemini');
+  if (file.state === 'FAILED') {
+    throw new Error(`File processing failed in Gemini`);
   }
 
-  console.log(`[${requestId}] Video processed successfully`);
-  return fileStatus;
+  console.log(`[${requestId}] File processed successfully, state: ${file.state}`);
+  return file;
 }
 
 async function analyzeWithGemini(geminiFile: any, requestId: string): Promise<VideoAnalysis> {
@@ -151,7 +179,7 @@ Responde únicamente con el JSON válido, sin texto adicional.
   `;
 
   const analysisResponse = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GOOGLE_API_KEY}`,
     {
       method: 'POST',
       headers: {
@@ -223,7 +251,7 @@ Ejemplo: marketing digital, storytelling, engagement, viral content, emprendimie
   `;
 
   const tagResponse = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GOOGLE_API_KEY}`,
     {
       method: 'POST',
       headers: {
@@ -288,7 +316,7 @@ function mapTemaToTam(tema: string, analysis: VideoAnalysis): string {
 async function cleanupGeminiFile(geminiFile: any, requestId: string): Promise<void> {
   try {
     await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/${geminiFile.name}?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/${geminiFile.name}?key=${GOOGLE_API_KEY}`,
       { method: 'DELETE' }
     );
     console.log(`[${requestId}] Cleaned up Gemini file`);
