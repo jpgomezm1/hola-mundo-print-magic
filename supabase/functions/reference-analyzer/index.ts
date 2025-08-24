@@ -178,59 +178,76 @@ Definiciones de los temas:
 Responde únicamente con el JSON válido, sin texto adicional.
   `;
 
-  const analysisResponse = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GOOGLE_API_KEY}`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              {
-                fileData: {
-                  mimeType: geminiFile.mimeType,
-                  fileUri: geminiFile.uri
-                }
-              },
-              {
-                text: prompt
-              }
-            ]
-          }
-        ]
-      })
-    }
-  );
-
-  if (!analysisResponse.ok) {
-    throw new Error(`Gemini analysis failed: ${analysisResponse.statusText}`);
-  }
-
-  const result = await analysisResponse.json();
-  
-  if (!result.candidates?.[0]?.content?.parts?.[0]?.text) {
-    throw new Error('No analysis text returned from Gemini');
-  }
-
-  let analysisText = result.candidates[0].content.parts[0].text.trim();
-  
-  // Clean JSON fences if present
-  if (analysisText.startsWith('```json')) {
-    analysisText = analysisText.slice(7, -3);
-  } else if (analysisText.startsWith('```')) {
-    analysisText = analysisText.slice(3, -3);
-  }
-
   try {
-    const analysis = JSON.parse(analysisText);
-    console.log(`[${requestId}] Analysis completed - Topic: ${analysis.tema_principal}`);
-    return analysis;
-  } catch (parseError) {
-    console.error(`[${requestId}] Failed to parse analysis JSON:`, parseError);
-    throw new Error('Failed to parse analysis response');
+    const analysisResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GOOGLE_API_KEY}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  fileData: {
+                    mimeType: geminiFile.mimeType,
+                    fileUri: geminiFile.uri
+                  }
+                },
+                {
+                  text: prompt
+                }
+              ]
+            }
+          ],
+          generationConfig: {
+            temperature: 0.1,
+            topK: 32,
+            topP: 1,
+            maxOutputTokens: 2048,
+          }
+        })
+      }
+    );
+
+    if (!analysisResponse.ok) {
+      const errorText = await analysisResponse.text();
+      console.error(`[${requestId}] Gemini API error response:`, errorText);
+      throw new Error(`Gemini analysis failed: ${analysisResponse.status} ${analysisResponse.statusText} - ${errorText}`);
+    }
+
+    const result = await analysisResponse.json();
+    console.log(`[${requestId}] Gemini API response:`, JSON.stringify(result, null, 2));
+    
+    if (!result.candidates?.[0]?.content?.parts?.[0]?.text) {
+      console.error(`[${requestId}] Invalid Gemini response structure:`, result);
+      throw new Error('No analysis text returned from Gemini');
+    }
+
+    let analysisText = result.candidates[0].content.parts[0].text.trim();
+    console.log(`[${requestId}] Raw analysis text:`, analysisText);
+    
+    // Clean JSON fences if present
+    if (analysisText.startsWith('```json')) {
+      analysisText = analysisText.slice(7, -3);
+    } else if (analysisText.startsWith('```')) {
+      analysisText = analysisText.slice(3, -3);
+    }
+
+    try {
+      const analysis = JSON.parse(analysisText);
+      console.log(`[${requestId}] Analysis completed - Topic: ${analysis.tema_principal}`);
+      return analysis;
+    } catch (parseError) {
+      console.error(`[${requestId}] Failed to parse analysis JSON:`, parseError);
+      console.error(`[${requestId}] Analysis text that failed to parse:`, analysisText);
+      throw new Error(`Failed to parse analysis response: ${parseError.message}`);
+    }
+  } catch (error) {
+    console.error(`[${requestId}] Error in analyzeWithGemini:`, error);
+    throw error;
   }
 }
 
