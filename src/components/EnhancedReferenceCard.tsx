@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { ViralScoreCard } from './ViralScoreCard';
+
 import { useToast } from '@/hooks/useToast';
 import { ReferenceVideo, useReferenceVideos } from '@/hooks/useReferenceVideos';
 import { 
@@ -249,36 +249,84 @@ export const EnhancedReferenceCard: React.FC<EnhancedReferenceCardProps> = ({
             </div>
           )}
 
-          {/* Viral Score Component */}
-          <ViralScoreCard video={video} />
-
-          {/* Quick Stats Grid */}
+          {/* Detailed Metrics */}
           {video.engagement_metrics && (
-            <div className="grid grid-cols-2 gap-3">
-              {video.engagement_metrics.views && (
-                <div className="flex items-center gap-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                  <Eye className="w-4 h-4 text-blue-600" />
-                  <div>
-                    <p className="text-xs text-blue-600 font-medium">Views</p>
-                    <p className="text-sm font-bold text-blue-800 dark:text-blue-200">
-                      {(video.engagement_metrics.views / 1000).toFixed(0)}K
-                    </p>
-                  </div>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="p-1 rounded-full bg-blue-100 text-blue-600">
+                  <BarChart3 className="w-3 h-3" />
                 </div>
-              )}
-              {video.engagement_metrics.likes && (
-                <div className="flex items-center gap-2 p-2 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                  <ThumbsUp className="w-4 h-4 text-red-600" />
-                  <div>
-                    <p className="text-xs text-red-600 font-medium">Likes</p>
-                    <p className="text-sm font-bold text-red-800 dark:text-red-200">
-                      {(video.engagement_metrics.likes / 1000).toFixed(1)}K
+                <span className="text-sm font-semibold text-muted-foreground">Métricas</span>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-2">
+                {video.engagement_metrics.views && (
+                  <div className="flex items-center gap-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                    <Eye className="w-4 h-4 text-blue-600" />
+                    <div>
+                      <p className="text-xs text-blue-600 font-medium">Views</p>
+                      <p className="text-sm font-bold text-blue-800 dark:text-blue-200">
+                        {(video.engagement_metrics.views / 1000).toFixed(0)}K
+                      </p>
+                    </div>
+                  </div>
+                )}
+                
+                {video.engagement_metrics.likes && (
+                  <div className="flex items-center gap-2 p-2 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                    <ThumbsUp className="w-4 h-4 text-red-600" />
+                    <div>
+                      <p className="text-xs text-red-600 font-medium">Likes</p>
+                      <p className="text-sm font-bold text-red-800 dark:text-red-200">
+                        {(video.engagement_metrics.likes / 1000).toFixed(1)}K
+                      </p>
+                    </div>
+                  </div>
+                )}
+                
+                {video.engagement_metrics.shares && (
+                  <div className="flex items-center gap-2 p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                    <Share2 className="w-4 h-4 text-green-600" />
+                    <div>
+                      <p className="text-xs text-green-600 font-medium">Shares</p>
+                      <p className="text-sm font-bold text-green-800 dark:text-green-200">
+                        {video.engagement_metrics.shares}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                
+                {video.engagement_metrics.comments && (
+                  <div className="flex items-center gap-2 p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                    <MessageCircle className="w-4 h-4 text-purple-600" />
+                    <div>
+                      <p className="text-xs text-purple-600 font-medium">Comments</p>
+                      <p className="text-sm font-bold text-purple-800 dark:text-purple-200">
+                        {video.engagement_metrics.comments}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              {engagementRate > 0 && (
+                <div className="flex items-center gap-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                  <TrendingUp className="w-4 h-4 text-yellow-600" />
+                  <div className="flex-1">
+                    <p className="text-xs text-yellow-600 font-medium">Engagement Rate</p>
+                    <p className="text-sm font-bold text-yellow-800 dark:text-yellow-200">
+                      {engagementRate.toFixed(2)}%
                     </p>
                   </div>
+                  <Progress 
+                    value={Math.min(engagementRate, 10) * 10} 
+                    className="w-16 h-2" 
+                  />
                 </div>
               )}
             </div>
           )}
+
 
           {/* Tags Preview */}
           {video.tags && video.tags.length > 0 && (
@@ -401,8 +449,75 @@ export const EnhancedReferenceCard: React.FC<EnhancedReferenceCardProps> = ({
                 </div>
               )}
 
-              {/* Viral Score Analysis */}
-              <ViralScoreCard video={video} />
+              {/* Enhanced Metrics Display */}
+              {video.engagement_metrics && (
+                <Card>
+                  <CardHeader>
+                    <h4 className="font-semibold flex items-center gap-2">
+                      <BarChart3 className="w-4 h-4 text-primary" />
+                      Métricas de Rendimiento
+                    </h4>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-3">
+                      {video.engagement_metrics.views && (
+                        <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                          <Eye className="w-6 h-6 text-blue-600 mx-auto mb-1" />
+                          <p className="text-xl font-bold text-blue-800 dark:text-blue-200">
+                            {(video.engagement_metrics.views / 1000).toFixed(0)}K
+                          </p>
+                          <p className="text-xs text-blue-600">Views</p>
+                        </div>
+                      )}
+                      {video.engagement_metrics.likes && (
+                        <div className="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                          <ThumbsUp className="w-6 h-6 text-red-600 mx-auto mb-1" />
+                          <p className="text-xl font-bold text-red-800 dark:text-red-200">
+                            {(video.engagement_metrics.likes / 1000).toFixed(1)}K
+                          </p>
+                          <p className="text-xs text-red-600">Likes</p>
+                        </div>
+                      )}
+                      {video.engagement_metrics.shares && (
+                        <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                          <Share2 className="w-6 h-6 text-green-600 mx-auto mb-1" />
+                          <p className="text-xl font-bold text-green-800 dark:text-green-200">
+                            {video.engagement_metrics.shares}
+                          </p>
+                          <p className="text-xs text-green-600">Shares</p>
+                        </div>
+                      )}
+                      {video.engagement_metrics.comments && (
+                        <div className="text-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                          <MessageCircle className="w-6 h-6 text-purple-600 mx-auto mb-1" />
+                          <p className="text-xl font-bold text-purple-800 dark:text-purple-200">
+                            {video.engagement_metrics.comments}
+                          </p>
+                          <p className="text-xs text-purple-600">Comments</p>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {engagementRate > 0 && (
+                      <div className="flex items-center gap-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                        <TrendingUp className="w-6 h-6 text-yellow-600" />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                            Engagement Rate
+                          </p>
+                          <p className="text-2xl font-bold text-yellow-800 dark:text-yellow-200">
+                            {engagementRate.toFixed(2)}%
+                          </p>
+                        </div>
+                        <Progress 
+                          value={Math.min(engagementRate, 10) * 10} 
+                          className="w-20 h-3" 
+                        />
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Creator Info */}
               <Card>
