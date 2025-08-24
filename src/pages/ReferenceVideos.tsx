@@ -38,9 +38,9 @@ import {
 import { NoDataState } from '@/components/empty-states/NoDataState';
 import { PieChartSkeleton } from '@/components/skeletons/ChartSkeleton';
 
-type SortOption = 'created_at' | 'title' | 'duration_seconds' | 'creator_username' | 'engagement_score';
+type SortOption = 'created_at' | 'title' | 'duration_seconds' | 'creator_username' | 'viral_score';
 type ViewMode = 'grid' | 'list' | 'compact';
-type ActiveTab = 'videos' | 'compare';
+type ActiveTab = 'videos' | 'analytics' | 'compare';
 
 export default function ReferenceVideos() {
   const { 
@@ -73,17 +73,32 @@ export default function ReferenceVideos() {
   const categories = getCategories();
   const allTags = getAllTags();
 
-  // Calculate engagement score for sorting (using new metrics fields)
-  const getEngagementScore = (video: any) => {
-    const views = video.metrics_views || video.engagement_metrics?.views || 0;
-    const likes = video.metrics_likes || video.engagement_metrics?.likes || 0;
-    const comments = video.metrics_comments || video.engagement_metrics?.comments || 0;
-    const shares = video.metrics_shares || video.engagement_metrics?.shares || 0;
+  // Calculate viral score for sorting
+  const getViralScore = (video: any) => {
+    let score = 0;
+    const metrics = video.engagement_metrics;
     
-    if (views === 0) return 0;
+    if (!metrics) return 0;
     
-    const engagementRate = ((likes + comments + shares) / views) * 100;
-    return Math.min(Math.round(engagementRate * 10), 100);
+    const engagementRate = metrics.views ? 
+      ((metrics.likes || 0) + (metrics.comments || 0) + (metrics.shares || 0)) / metrics.views * 100 : 0;
+    
+    score += Math.min(engagementRate * 4, 40);
+    
+    if (metrics.views) {
+      if (metrics.views > 1000000) score += 20;
+      else if (metrics.views > 500000) score += 15;
+      else if (metrics.views > 100000) score += 10;
+      else if (metrics.views > 50000) score += 5;
+    }
+    
+    if (video.hook && video.hook.length > 10) score += 15;
+    if (video.duration_seconds && video.duration_seconds >= 15 && video.duration_seconds <= 60) score += 10;
+    
+    const viralFactors = video.extracted_insights?.viral_factors?.length || 0;
+    score += Math.min(viralFactors * 3, 15);
+    
+    return Math.min(Math.round(score), 100);
   };
 
   // Filtered and sorted videos
@@ -117,9 +132,9 @@ export default function ReferenceVideos() {
       let aValue: any = a[sortBy as keyof typeof a];
       let bValue: any = b[sortBy as keyof typeof b];
 
-      if (sortBy === 'engagement_score') {
-        aValue = getEngagementScore(a);
-        bValue = getEngagementScore(b);
+      if (sortBy === 'viral_score') {
+        aValue = getViralScore(a);
+        bValue = getViralScore(b);
       } else if (sortBy === 'created_at') {
         aValue = new Date(aValue);
         bValue = new Date(bValue);
@@ -140,7 +155,7 @@ export default function ReferenceVideos() {
     sortBy,
     sortOrder,
     searchVideos,
-    getEngagementScore
+    getViralScore
   ]);
 
   const addTag = (tag: string) => {
@@ -168,17 +183,17 @@ export default function ReferenceVideos() {
   // Quick stats for header
   const quickStats = useMemo(() => {
     const totalVideos = referenceVideos.length;
-    const withMetrics = referenceVideos.filter(v => v.metrics_views || v.engagement_metrics?.views).length;
-    const avgEngagement = totalVideos > 0 ? 
-      referenceVideos.reduce((sum, v) => sum + getEngagementScore(v), 0) / totalVideos : 0;
+    const highPerformers = referenceVideos.filter(v => getViralScore(v) >= 70).length;
+    const avgScore = totalVideos > 0 ? 
+      referenceVideos.reduce((sum, v) => sum + getViralScore(v), 0) / totalVideos : 0;
     
     return {
       totalVideos,
-      withMetrics,
-      avgEngagement: Math.round(avgEngagement),
+      highPerformers,
+      avgScore: Math.round(avgScore),
       favorites: getFavorites().length
     };
-  }, [referenceVideos, getEngagementScore, getFavorites]);
+  }, [referenceVideos, getViralScore, getFavorites]);
 
   if (loading) {
     return (
@@ -209,12 +224,12 @@ export default function ReferenceVideos() {
               <span>{quickStats.totalVideos} videos</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <BarChart3 className="w-4 h-4" />
-              <span>{quickStats.withMetrics} con métricas</span>
+              <TrendingUp className="w-4 h-4" />
+              <span>Score promedio: {quickStats.avgScore}</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <TrendingUp className="w-4 h-4" />
-              <span>Engagement promedio: {quickStats.avgEngagement}%</span>
+              <Zap className="w-4 h-4" />
+              <span>{quickStats.highPerformers} alto rendimiento</span>
             </div>
           </div>
         </div>
@@ -238,10 +253,14 @@ export default function ReferenceVideos() {
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as ActiveTab)} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 lg:w-[300px]">
+        <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
           <TabsTrigger value="videos" className="gap-2">
             <VideoIcon className="w-4 h-4" />
             Videos ({referenceVideos.length})
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="gap-2">
+            <BarChart3 className="w-4 h-4" />
+            Analytics
           </TabsTrigger>
           <TabsTrigger value="compare" className="gap-2">
             <GitCompare className="w-4 h-4" />
@@ -304,7 +323,7 @@ export default function ReferenceVideos() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="created_at">Fecha de creación</SelectItem>
-                      <SelectItem value="engagement_score">Score de engagement</SelectItem>
+                      <SelectItem value="viral_score">Score viral</SelectItem>
                       <SelectItem value="title">Título</SelectItem>
                       <SelectItem value="duration_seconds">Duración</SelectItem>
                       <SelectItem value="creator_username">Creador</SelectItem>

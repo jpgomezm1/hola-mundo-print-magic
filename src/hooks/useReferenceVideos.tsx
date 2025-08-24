@@ -7,16 +7,14 @@ export interface ReferenceVideo {
   id: string;
   user_id: string;
   tiktok_url: string;
-  storage_path?: string;
   title?: string;
   description?: string;
   hook?: string;
   script?: string;
-  guion_oral?: string;
   editing_style?: string;
   duration_seconds?: number;
   cta_type?: string;
-  video_theme?: 'Entretener' | 'Identificar' | 'Activar' | 'Educar';
+  video_theme?: string;
   tone_style?: string;
   visual_elements?: string[];
   audio_style?: string;
@@ -25,25 +23,19 @@ export interface ReferenceVideo {
   thumbnail_url?: string;
   creator_username?: string;
   tags?: string[];
-  tags_ai?: string[];
-  tam_ai?: 'Educativo' | 'Entretenimiento' | 'Ventas' | 'Tutorial' | 'Storytelling' | 'Producto';
-  justificacion_tema?: string;
   category?: string;
   notes?: string;
   is_favorite: boolean;
   engagement_metrics?: any;
-  metrics_views?: number;
-  metrics_likes?: number;
-  metrics_comments?: number;
-  metrics_shares?: number;
   created_at: string;
   updated_at: string;
 }
 
 export interface AnalyzeVideoParams {
-  url?: string;
-  storage_path?: string;
-  video_id?: string;
+  tiktok_url: string;
+  tags?: string[];
+  category?: string;
+  notes?: string;
 }
 
 export interface AdaptContentParams {
@@ -75,7 +67,7 @@ export const useReferenceVideos = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setReferenceVideos((data || []) as ReferenceVideo[]);
+      setReferenceVideos(data || []);
     } catch (error) {
       console.error('Error fetching reference videos:', error);
       toast({
@@ -88,7 +80,7 @@ export const useReferenceVideos = () => {
     }
   };
 
-  // Analyze a TikTok video using the new reference-analyzer edge function
+  // Analyze a TikTok video
   const analyzeVideo = async (params: AnalyzeVideoParams) => {
     if (!user) throw new Error('User not authenticated');
 
@@ -96,22 +88,22 @@ export const useReferenceVideos = () => {
     try {
       const { data, error } = await supabase.functions.invoke('reference-analyzer', {
         body: {
-          ...params,
-          video_id: params.video_id || `video_${Date.now()}`
+          action: 'analyze',
+          ...params
         }
       });
 
       if (error) throw error;
 
-      if (data) {
+      if (data.success) {
         await fetchReferenceVideos(); // Refresh the list
         toast({
           title: "¡Video analizado!",
           description: "El video se ha analizado y guardado exitosamente",
         });
-        return data;
+        return data.reference_video;
       } else {
-        throw new Error('Failed to analyze video');
+        throw new Error(data.error || 'Failed to analyze video');
       }
     } catch (error) {
       console.error('Error analyzing video:', error);
@@ -242,12 +234,9 @@ export const useReferenceVideos = () => {
       video.description?.toLowerCase().includes(lowercaseQuery) ||
       video.hook?.toLowerCase().includes(lowercaseQuery) ||
       video.script?.toLowerCase().includes(lowercaseQuery) ||
-      video.guion_oral?.toLowerCase().includes(lowercaseQuery) ||
       video.video_theme?.toLowerCase().includes(lowercaseQuery) ||
       video.creator_username?.toLowerCase().includes(lowercaseQuery) ||
       video.tags?.some(tag => tag.toLowerCase().includes(lowercaseQuery)) ||
-      video.tags_ai?.some(tag => tag.toLowerCase().includes(lowercaseQuery)) ||
-      video.tam_ai?.toLowerCase().includes(lowercaseQuery) ||
       video.notes?.toLowerCase().includes(lowercaseQuery)
     );
   };
@@ -265,7 +254,6 @@ export const useReferenceVideos = () => {
     const tags = new Set<string>();
     referenceVideos.forEach(video => {
       video.tags?.forEach(tag => tags.add(tag));
-      video.tags_ai?.forEach(tag => tags.add(tag));
     });
     return Array.from(tags);
   };
