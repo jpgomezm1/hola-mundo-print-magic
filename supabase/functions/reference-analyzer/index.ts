@@ -444,33 +444,43 @@ serve(async (req) => {
 
     // Step 6: Save to database
     try {
+      const videoRecord = {
+        user_id: user.id,
+        tiktok_url: body.url || '',
+        storage_path: body.storage_path || null,
+        guion_oral: analysis.guion_oral,
+        hook: analysis.hook,
+        cta_type: analysis.cta,
+        editing_style: analysis.estilo_edicion,
+        video_theme: analysis.tema_principal,
+        justificacion_tema: analysis.justificacion_tema,
+        tags_ai: tags_ai,
+        tam_ai: tam_ai,
+        metrics_views: 0,
+        metrics_likes: 0,
+        metrics_comments: 0,
+        metrics_shares: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      console.log(`[${requestId}] Attempting to save to database:`, videoRecord);
+
       const { data: insertData, error: insertError } = await supabaseAdmin
         .from('reference_videos')
-        .upsert({
-          id: videoId,
-          user_id: user.id,
-          tiktok_url: body.url || '',
-          storage_path: body.storage_path || null,
-          guion_oral: analysis.guion_oral,
-          hook: analysis.hook,
-          cta_type: analysis.cta,
-          editing_style: analysis.estilo_edicion,
-          video_theme: analysis.tema_principal,
-          justificacion_tema: analysis.justificacion_tema,
-          tags_ai: tags_ai,
-          tam_ai: tam_ai,
-          metrics_views: 0,
-          metrics_likes: 0,
-          metrics_comments: 0,
-          metrics_shares: 0,
-        }, { 
-          onConflict: 'id' 
-        });
+        .insert(videoRecord)
+        .select();
 
       if (insertError) {
         console.error(`[${requestId}] Database insert failed:`, insertError);
+        console.error(`[${requestId}] Insert error details:`, {
+          message: insertError.message,
+          details: insertError.details,
+          hint: insertError.hint,
+          code: insertError.code
+        });
       } else {
-        console.log(`[${requestId}] Saved to database successfully`);
+        console.log(`[${requestId}] Saved to database successfully:`, insertData);
       }
     } catch (dbError) {
       console.error(`[${requestId}] Database error:`, dbError);
