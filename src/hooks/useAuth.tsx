@@ -20,7 +20,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Auto-login credentials for the shared account
   const AUTO_LOGIN_EMAIL = "jpgomez@stayirrelevant.com";
-  const AUTO_LOGIN_PASSWORD = "irrelevant123";
+  const AUTO_LOGIN_PASSWORD = "123456789"; // Necesitamos la contraseña correcta
 
   useEffect(() => {
     // Set up auth state listener FIRST
