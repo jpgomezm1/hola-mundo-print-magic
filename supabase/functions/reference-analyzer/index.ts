@@ -59,41 +59,18 @@ function extractVideoId(url: string): string {
   return match ? match[1] : '';
 }
 
-// Extract TikTok video URL
-async function extractTikTokVideoUrl(tiktokUrl: string): Promise<string> {
-  console.log(`[EXTRACTOR] Extrayendo URL del video: ${tiktokUrl}`);
+// Extract TikTok video metadata and URL
+async function extractTikTokVideoUrl(tiktokUrl: string): Promise<{directUrl?: string, metadata: any}> {
+  console.log(`[EXTRACTOR] Extrayendo información del video: ${tiktokUrl}`);
   
   const videoId = extractVideoId(tiktokUrl);
   if (!videoId) {
     throw new Error('No se pudo extraer el ID del video');
   }
 
-  // Primary method: TikTok API
+  // Try to get metadata from TikTok (fallback approach)
   try {
-    console.log(`[EXTRACTOR] Intentando método primario con ID: ${videoId}`);
-    const apiUrl = `https://api.tiktokv.com/aweme/v1/feed/?aweme_id=${videoId}`;
-    
-    const response = await fetch(apiUrl, {
-      headers: {
-        'User-Agent': 'com.ss.android.ugc.trill/494 TikTok 24.1.0'
-      }
-    });
-    
-    if (response.ok) {
-      const data = await response.json();
-      const videoUrl = data?.aweme_list?.[0]?.video?.play_addr?.url_list?.[0];
-      if (videoUrl) {
-        console.log(`[EXTRACTOR] Método primario exitoso`);
-        return videoUrl;
-      }
-    }
-  } catch (error) {
-    console.warn(`[EXTRACTOR] Método primario falló: ${error.message}`);
-  }
-
-  // Fallback method: TikWM
-  try {
-    console.log(`[EXTRACTOR] Intentando método fallback`);
+    console.log(`[EXTRACTOR] Intentando método TikWM`);
     const fallbackUrl = `https://www.tikwm.com/api/?url=${encodeURIComponent(tiktokUrl)}&hd=1`;
     
     const response = await fetch(fallbackUrl, {
@@ -104,16 +81,42 @@ async function extractTikTokVideoUrl(tiktokUrl: string): Promise<string> {
     
     if (response.ok) {
       const data = await response.json();
-      if (data.code === 0 && data.data?.play) {
-        console.log(`[EXTRACTOR] Método fallback exitoso`);
-        return data.data.play;
+      if (data.code === 0 && data.data) {
+        console.log(`[EXTRACTOR] Metadata obtenida exitosamente`);
+        return {
+          directUrl: data.data.play,
+          metadata: {
+            title: data.data.title || '',
+            author: data.data.author?.nickname || '',
+            username: data.data.author?.unique_id || '',
+            duration: data.data.duration || 0,
+            views: data.data.play_count || 0,
+            likes: data.data.digg_count || 0,
+            comments: data.data.comment_count || 0,
+            shares: data.data.share_count || 0
+          }
+        };
       }
     }
   } catch (error) {
-    console.warn(`[EXTRACTOR] Método fallback falló: ${error.message}`);
+    console.warn(`[EXTRACTOR] TikWM falló: ${error.message}`);
   }
 
-  throw new Error('No se pudo extraer la URL del video');
+  // Return basic metadata if extraction fails
+  const username = tiktokUrl.match(/@([\w.]+)\//)?.[1] || 'unknown';
+  return {
+    directUrl: null,
+    metadata: {
+      title: `Video de @${username}`,
+      author: username,
+      username: username,
+      duration: 0,
+      views: 0,
+      likes: 0,
+      comments: 0,
+      shares: 0
+    }
+  };
 }
 
 // Download video with timeout
@@ -312,56 +315,149 @@ function mapTheme(theme: string): string {
   return 'Entretener';
 }
 
-// Process single video
+// Analyze with text-based approach (fallback)
+async function analyzeWithText(tiktokUrl: string, metadata: any, videoId: string): Promise<any> {
+  console.log(`[TEXT_ANALYSIS] Analizando con contexto de texto: ${videoId}...`);
+  
+  const prompt = `Analiza este video de TikTok basándote en la URL y contexto disponible:
+
+URL: ${tiktokUrl}
+Título: ${metadata.title}
+Autor: @${metadata.username}
+Duración: ${metadata.duration}s
+
+Proporciona la siguiente información en formato JSON:
+
+{
+  "guion_oral": "Basándote en el título y contexto, infiere el posible contenido hablado",
+  "hook": "Basándote en el título, describe el posible gancho inicial",
+  "cta": "Analiza si hay un CTA implícito en el título o contexto",
+  "estilo_edicion": "Infiere el posible estilo de edición basado en el tipo de contenido",
+  "tema_principal": "Una de estas opciones: Entretener, Identificar, Activar, Educar",
+  "justificacion_tema": "Breve explicación de por qué clasificaste el video en esa categoría"
+}
+
+IMPORTANTE: campos en TEXTO PLANO, sin objetos anidados. Responde únicamente con JSON válido, sin texto adicional.
+
+Definiciones de los temas:
+- Entretener: Provocar risa, incomodidad o sorpresa, contenido diseñado para enganchar y quedarse en la cabeza
+- Identificar: Que la gente diga "yo soy ese" o "eso me pasa a mí", reforzando la conexión emocional
+- Activar: Motivar a compartir o comentar, unirse a la comunidad o dar un paso más en el funnel, con CTAs claros
+- Educar: Explicar herramientas, conceptos o procesos`;
+
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${geminiApiKey}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{
+        parts: [{ text: prompt }]
+      }],
+      generationConfig: {
+        temperature: 0.3,
+        maxOutputTokens: 4096
+      }
+    })
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Error en análisis de texto: ${response.status} - ${errorText}`);
+  }
+
+  const data = await response.json();
+  
+  if (!data.candidates || !data.candidates[0]) {
+    throw new Error('Sin respuesta válida de Gemini');
+  }
+
+  const aiResponse = data.candidates[0].content.parts[0].text;
+  console.log(`[TEXT_ANALYSIS] Respuesta recibida: ${aiResponse.substring(0, 200)}...`);
+  
+  const analysis = safeJSONParse(aiResponse);
+  if (!analysis) {
+    throw new Error('Error parseando respuesta JSON');
+  }
+
+  console.log(`[TEXT_ANALYSIS] Análisis completado: tema=${analysis.tema_principal}`);
+  return analysis;
+}
+
+// Process single video (hybrid approach)
 async function processVideo(tiktokUrl: string, videoId: string, userId: string, tags: string[], category: string, notes: string) {
   let geminiFile: any = null;
   
   try {
-    // 1. Extract video URL
-    const directVideoUrl = await extractTikTokVideoUrl(tiktokUrl);
+    console.log(`[PROCESS] Iniciando procesamiento del video ${videoId}`);
     
-    // 2. Download video
-    const videoBlob = await downloadVideo(directVideoUrl);
+    // 1. Extract video metadata
+    const { directUrl, metadata } = await extractTikTokVideoUrl(tiktokUrl);
+    console.log(`[PROCESS] Metadata extraída. DirectUrl disponible: ${!!directUrl}`);
     
-    // 3. Upload to Gemini
-    geminiFile = await uploadToGemini(videoBlob, videoId);
+    let analysis: any;
     
-    // 4. Wait for processing
-    const processedFile = await waitForProcessing(geminiFile);
+    // 2. Try video analysis if we have direct URL
+    if (directUrl) {
+      try {
+        console.log(`[PROCESS] Intentando análisis con video directo`);
+        
+        // Download video
+        const videoBlob = await downloadVideo(directUrl);
+        
+        // Upload to Gemini
+        geminiFile = await uploadToGemini(videoBlob, videoId);
+        
+        // Wait for processing
+        const processedFile = await waitForProcessing(geminiFile);
+        
+        // Analyze with Gemini
+        analysis = await analyzeWithGemini(processedFile, videoId);
+        console.log(`[PROCESS] Análisis con video completado exitosamente`);
+        
+      } catch (videoError) {
+        console.warn(`[PROCESS] Error en análisis con video: ${videoError.message}`);
+        console.log(`[PROCESS] Fallback a análisis con texto`);
+        
+        // Cleanup failed Gemini file if it exists
+        if (geminiFile) {
+          await cleanupGeminiFile(geminiFile);
+          geminiFile = null;
+        }
+        
+        // Fallback to text analysis
+        analysis = await analyzeWithText(tiktokUrl, metadata, videoId);
+      }
+    } else {
+      console.log(`[PROCESS] No hay URL directa, usando análisis con texto`);
+      analysis = await analyzeWithText(tiktokUrl, metadata, videoId);
+    }
     
-    // 5. Analyze with Gemini
-    const analysis = await analyzeWithGemini(processedFile, videoId);
-    
-    // 6. Create analysis response
+    // 3. Create analysis response
     const analysisResponse = {
-      hook: analysis.hook || "Análisis completado",
+      hook: analysis.hook || "Hook analizado",
       script: analysis.guion_oral || "Contenido analizado", 
       editing_style: analysis.estilo_edicion || "Estilo identificado",
       cta_type: analysis.cta || "Engagement",
       video_theme: analysis.tema_principal || "Entretener",
       tone_style: analysis.justificacion_tema || "Análisis de tono",
-      visual_elements: ["Elementos del video real"],
+      visual_elements: ["Elementos del video analizados"],
       audio_style: "Audio analizado",
       insights: {
         viral_factors: ["Factores virales identificados"],
         target_audience: "Audiencia analizada", 
-        replication_tips: ["Tips del video real"],
+        replication_tips: ["Tips de replicación"],
         viral_score: 7,
-        metrics_analysis: "Análisis basado en video real",
+        metrics_analysis: "Análisis basado en contenido",
         detailed_analysis: analysis
       }
     };
     
-    // 7. Extract username
-    const username = tiktokUrl.match(/@([\w.]+)\//)?.[1] || 'unknown';
-    
-    // 8. Save to database
+    // 4. Save to database
     const { data: savedVideo, error: saveError } = await supabase
       .from('reference_videos')
       .insert({
         user_id: userId,
         tiktok_url: tiktokUrl,
-        title: `Video de @${username}`,
+        title: metadata.title || `Video de @${metadata.username}`,
         description: `Video analizado de TikTok`,
         hook: analysisResponse.hook,
         script: analysisResponse.script,
@@ -372,7 +468,7 @@ async function processVideo(tiktokUrl: string, videoId: string, userId: string, 
         visual_elements: analysisResponse.visual_elements,
         audio_style: analysisResponse.audio_style,
         extracted_insights: analysisResponse.insights,
-        creator_username: username,
+        creator_username: metadata.username,
         tags: tags || [],
         category: category || 'otros',
         notes: notes || '',
@@ -396,7 +492,7 @@ async function processVideo(tiktokUrl: string, videoId: string, userId: string, 
     };
     
   } finally {
-    // Always cleanup Gemini file
+    // Always cleanup Gemini file if it exists
     if (geminiFile) {
       await cleanupGeminiFile(geminiFile);
     }
