@@ -604,7 +604,15 @@ serve(async (req) => {
             engagement_rate: videoData.stats.views > 0 ? 
               ((videoData.stats.likes + videoData.stats.comments + videoData.stats.shares) / videoData.stats.views * 100) : 0
           } : {},
-          viral_score: analysis.insights?.viral_score || 0,
+          viral_score: (() => {
+            const score = analysis.insights?.viral_score;
+            if (typeof score === 'number') return Math.min(Math.max(score, 0), 10);
+            if (typeof score === 'string') {
+              const numericScore = parseInt(score.replace(/[^0-9]/g, ''));
+              return !isNaN(numericScore) ? Math.min(Math.max(numericScore, 0), 10) : 5;
+            }
+            return 5; // Default score if unable to parse
+          })(),
           processing_status: 'completed',
           creation_date: videoData.createTime ? new Date(videoData.createTime * 1000).toISOString() : new Date().toISOString()
         })
