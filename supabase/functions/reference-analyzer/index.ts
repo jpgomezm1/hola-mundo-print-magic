@@ -13,93 +13,154 @@ const geminiApiKey = Deno.env.get('GEMINI_API_KEY')!;
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-// Download video using yt-dlp equivalent and upload to Gemini Files API
-async function downloadAndAnalyzeVideo(videoUrl: string, videoId: string) {
-  console.log(`[DESCARGA] Descargando video ID ${videoId}: ${videoUrl}`);
+// Extract TikTok video URL using TikTok's API approach
+async function extractTikTokVideoUrl(tiktokUrl: string): Promise<string> {
+  console.log(`[EXTRACTOR] Extrayendo URL real del video: ${tiktokUrl}`);
   
   try {
-    // Step 1: Download video using a fetch-based approach (simulating yt-dlp)
-    const videoResponse = await fetch(videoUrl, {
+    // Use a TikTok video extraction service
+    const extractorUrl = `https://api.tiktokv.com/aweme/v1/feed/?aweme_id=${extractVideoId(tiktokUrl)}`;
+    
+    const response = await fetch(extractorUrl, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        'User-Agent': 'com.ss.android.ugc.trill/494+TikTok+24.1.0+user_agent_string'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Error extracting video: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    const videoUrl = data?.aweme_list?.[0]?.video?.play_addr?.url_list?.[0];
+    
+    if (!videoUrl) {
+      throw new Error('No video URL found');
+    }
+    
+    console.log(`[EXTRACTOR] URL extraída exitosamente`);
+    return videoUrl;
+    
+  } catch (error) {
+    console.error(`[ERROR] Error extrayendo video:`, error);
+    // Fallback: try alternative method
+    return await extractAlternative(tiktokUrl);
+  }
+}
+
+// Alternative extraction method
+async function extractAlternative(tiktokUrl: string): Promise<string> {
+  console.log(`[FALLBACK] Intentando método alternativo...`);
+  
+  try {
+    // Use TikWM API as fallback
+    const apiUrl = `https://www.tikwm.com/api/?url=${encodeURIComponent(tiktokUrl)}&hd=1`;
+    
+    const response = await fetch(apiUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    });
+    
+    const data = await response.json();
+    
+    if (data.code === 0 && data.data?.play) {
+      console.log(`[FALLBACK] Video extraído con TikWM`);
+      return data.data.play;
+    }
+    
+    throw new Error('TikWM extraction failed');
+    
+  } catch (error) {
+    console.error(`[ERROR] Métodos de extracción fallaron:`, error);
+    throw new Error('No se pudo extraer el video de TikTok');
+  }
+}
+
+// Extract video ID from TikTok URL
+function extractVideoId(url: string): string {
+  const match = url.match(/video\/(\d+)/);
+  return match ? match[1] : '';
+}
+
+// Download and analyze video with Gemini
+async function downloadAndAnalyzeVideo(tiktokUrl: string, videoId: string) {
+  console.log(`[DESCARGA] Iniciando descarga del video ID ${videoId}`);
+  
+  try {
+    // Step 1: Extract real video URL
+    const directVideoUrl = await extractTikTokVideoUrl(tiktokUrl);
+    
+    // Step 2: Download video content
+    console.log(`[DESCARGA] Descargando contenido del video...`);
+    const videoResponse = await fetch(directVideoUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Referer': 'https://www.tiktok.com/'
       }
     });
     
     if (!videoResponse.ok) {
-      throw new Error(`Error downloading video: ${videoResponse.status}`);
+      throw new Error(`Error descargando video: ${videoResponse.status}`);
     }
     
     const videoBlob = await videoResponse.arrayBuffer();
     console.log(`[OK] Video descargado: ${videoBlob.byteLength} bytes`);
     
-    // Step 2: Create a temporary file and upload to Supabase Storage
-    const fileName = `temp_video_${videoId}_${Date.now()}.mp4`;
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('temp-videos')
-      .upload(fileName, videoBlob, {
-        contentType: 'video/mp4',
-        cacheControl: '3600'
-      });
-    
-    if (uploadError) {
-      throw new Error(`Error uploading to storage: ${uploadError.message}`);
-    }
-    
-    console.log(`[STORAGE] Video guardado en storage: ${fileName}`);
-    
-    // Step 3: Get public URL for the video
-    const { data: urlData } = supabase.storage
-      .from('temp-videos')
-      .getPublicUrl(fileName);
-    
-    if (!urlData.publicUrl) {
-      throw new Error('Error getting public URL');
-    }
-    
+    // Step 3: Upload to Gemini Files API
     console.log(`[GEMINI] Subiendo video ${videoId} a Gemini...`);
     
-    // Step 4: Upload to Gemini Files API
-    const uploadToGeminiResponse = await fetch(`https://generativelanguage.googleapis.com/upload/v1beta/files?key=${geminiApiKey}`, {
+    const uploadFormData = new FormData();
+    const videoFile = new File([videoBlob], `video_${videoId}.mp4`, { type: 'video/mp4' });
+    uploadFormData.append('file', videoFile);
+    
+    const uploadResponse = await fetch(`https://generativelanguage.googleapis.com/upload/v1beta/files?key=${geminiApiKey}`, {
       method: 'POST',
-      headers: {
-        'X-Goog-Upload-Protocol': 'multipart'
-      },
-      body: createMultipartBody(videoBlob, `video_${videoId}.mp4`, 'video/mp4')
+      body: uploadFormData
     });
     
-    if (!uploadToGeminiResponse.ok) {
-      throw new Error(`Error uploading to Gemini: ${uploadToGeminiResponse.status}`);
+    if (!uploadResponse.ok) {
+      throw new Error(`Error subiendo a Gemini: ${uploadResponse.status} ${await uploadResponse.text()}`);
     }
     
-    const geminiFile = await uploadToGeminiResponse.json();
-    console.log(`[GEMINI] Archivo subido a Gemini: ${geminiFile.name}`);
+    const geminiFile = await uploadResponse.json();
+    console.log(`[GEMINI] Archivo subido: ${geminiFile.name}`);
     
-    // Step 5: Wait for processing
+    // Step 4: Wait for processing
     let fileStatus = geminiFile;
-    while (fileStatus.state === 'PROCESSING') {
-      console.log(`[PROCESANDO] Procesando video ${videoId} en Gemini...`);
+    let attempts = 0;
+    const maxAttempts = 20;
+    
+    while (fileStatus.state === 'PROCESSING' && attempts < maxAttempts) {
+      console.log(`[PROCESANDO] Esperando procesamiento (${attempts + 1}/${maxAttempts})...`);
       await new Promise(resolve => setTimeout(resolve, 3000));
       
-      const statusResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/${geminiFile.name}?key=${geminiApiKey}`);
-      fileStatus = await statusResponse.json();
+      const statusResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/files/${geminiFile.name.split('/').pop()}?key=${geminiApiKey}`);
+      if (statusResponse.ok) {
+        fileStatus = await statusResponse.json();
+      }
+      attempts++;
     }
     
     if (fileStatus.state === 'FAILED') {
-      throw new Error(`Error al procesar el video ${videoId} en Gemini`);
+      throw new Error(`Gemini falló al procesar el video`);
+    }
+    
+    if (fileStatus.state === 'PROCESSING') {
+      throw new Error(`Timeout esperando procesamiento de Gemini`);
     }
     
     console.log(`[OK] Video ${videoId} procesado exitosamente en Gemini`);
     
-    // Step 6: Analyze with Gemini
-    const analysis = await analyzeVideoWithGemini(geminiFile, videoId);
+    // Step 5: Analyze with Gemini
+    const analysis = await analyzeVideoWithGemini(fileStatus, videoId);
     
-    // Step 7: Cleanup - Delete from storage and Gemini
+    // Step 6: Cleanup
     try {
-      await supabase.storage.from('temp-videos').remove([fileName]);
-      await fetch(`https://generativelanguage.googleapis.com/v1beta/${geminiFile.name}?key=${geminiApiKey}`, {
+      await fetch(`https://generativelanguage.googleapis.com/v1beta/files/${geminiFile.name.split('/').pop()}?key=${geminiApiKey}`, {
         method: 'DELETE'
       });
-      console.log(`[LIMPIEZA] Archivos eliminados para video ${videoId}`);
+      console.log(`[LIMPIEZA] Archivo eliminado de Gemini`);
     } catch (cleanupError) {
       console.warn(`[AVISO] Error en limpieza: ${cleanupError}`);
     }
@@ -110,15 +171,6 @@ async function downloadAndAnalyzeVideo(videoUrl: string, videoId: string) {
     console.error(`[ERROR CRITICO] Error procesando video ${videoId}:`, error);
     throw error;
   }
-}
-
-// Create multipart body for file upload
-function createMultipartBody(fileData: ArrayBuffer, fileName: string, mimeType: string): FormData {
-  const formData = new FormData();
-  const file = new File([fileData], fileName, { type: mimeType });
-  formData.append('metadata', JSON.stringify({ name: fileName }));
-  formData.append('file', file);
-  return formData;
 }
 
 // Analyze video content with Gemini
