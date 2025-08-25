@@ -89,7 +89,7 @@ export const FeaturesSection = () => {
   ];
 
   return (
-    <section className="py-24 px-4 bg-navy-light/30 relative overflow-hidden">
+    <section id="herramientas" className="py-24 px-4 bg-navy-light/30 relative overflow-hidden">
       {/* Background Effects */}
       <div className="absolute inset-0">
         <motion.div 

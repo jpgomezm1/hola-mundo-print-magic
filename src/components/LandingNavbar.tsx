@@ -34,32 +34,25 @@ export const LandingNavbar = ({ onSignInClick }: LandingNavbarProps) => {
           </div>
         </motion.div>
         
-        <div className="hidden lg:flex items-center space-x-12">
-          <motion.div 
-            className="flex items-center space-x-3 text-text-secondary group"
-            whileHover={{ scale: 1.05 }}
-          >
-            <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-              <Zap className="w-4 h-4 text-primary" />
-            </div>
-            <div>
-              <span className="text-sm font-semibold group-hover:text-text-primary transition-colors">Powered by AI</span>
-              <p className="text-xs text-text-muted">OpenAI • Gemini • Claude</p>
-            </div>
-          </motion.div>
-          
-          <motion.div 
-            className="flex items-center space-x-3 text-text-secondary group"
-            whileHover={{ scale: 1.05 }}
-          >
-            <div className="w-8 h-8 bg-success/10 rounded-lg flex items-center justify-center group-hover:bg-success/20 transition-colors">
-              <Target className="w-4 h-4 text-success" />
-            </div>
-            <div>
-              <span className="text-sm font-semibold group-hover:text-text-primary transition-colors">Viralidad</span>
-              <p className="text-xs text-text-muted">Consistente</p>
-            </div>
-          </motion.div>
+        <div className="hidden lg:flex items-center space-x-8">
+          {[
+            { href: "#problema", label: "El Problema" },
+            { href: "#solucion", label: "Solución" },
+            { href: "#herramientas", label: "Herramientas" }
+          ].map((item, index) => (
+            <motion.a
+              key={index}
+              href={item.href}
+              className="text-text-secondary hover:text-primary transition-colors font-medium"
+              whileHover={{ scale: 1.05 }}
+              onClick={(e) => {
+                e.preventDefault();
+                document.querySelector(item.href)?.scrollIntoView({ behavior: 'smooth' });
+              }}
+            >
+              {item.label}
+            </motion.a>
+          ))}
         </div>
         
         <motion.div
@@ -67,10 +60,10 @@ export const LandingNavbar = ({ onSignInClick }: LandingNavbarProps) => {
           whileTap={{ scale: 0.95 }}
         >
           <Button 
-            onClick={onSignInClick}
+            onClick={() => window.open('https://preview--tool-tiktok.lovable.app/', '_blank')}
             className="bg-gradient-primary hover:opacity-90 transition-all shadow-glow px-8 py-3 font-bold text-lg group"
           >
-            <span className="group-hover:scale-105 transition-transform">Iniciar Sesión</span>
+            <span className="group-hover:scale-105 transition-transform">Explora la Herramienta</span>
           </Button>
         </motion.div>
       </div>

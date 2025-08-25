@@ -86,7 +86,7 @@ export const Footer = ({ onGetStarted }: FooterProps) => {
             >
               <Button 
                 size="lg"
-                onClick={onGetStarted}
+                onClick={() => window.open('https://preview--tool-tiktok.lovable.app/', '_blank')}
                 className="bg-gradient-primary hover:opacity-90 transition-all px-12 py-6 text-xl font-semibold shadow-glow group relative overflow-hidden"
               >
                 <motion.div
@@ -96,7 +96,7 @@ export const Footer = ({ onGetStarted }: FooterProps) => {
                   transition={{ duration: 0.6 }}
                 />
                 <Brain className="w-6 h-6 mr-3 group-hover:rotate-12 transition-transform relative z-10" />
-                <span className="relative z-10">Empezar Ahora Gratis</span>
+                <span className="relative z-10">Conoce la Herramienta</span>
                 <ArrowRight className="w-6 h-6 ml-3 group-hover:translate-x-1 transition-transform relative z-10" />
               </Button>
             </motion.div>

@@ -25,32 +25,32 @@ export const SolutionSection = () => {
   const aiTechnologies = [
     {
       icon: Video,
-      title: "Análisis con Gemini",
-      description: "Procesamiento avanzado de videos para extraer patrones virales y elementos de éxito",
-      tech: "Google Gemini",
-      features: ["Análisis de audio", "Detección de objetos", "Reconocimiento de patrones"],
+      title: "Análisis Inteligente",
+      description: "Descubrimos qué hace que un video funcione analizando automáticamente patrones de éxito",
+      tech: "IA Visual",
+      features: ["Detecta elementos populares", "Identifica tendencias", "Analiza el timing perfecto"],
       color: "from-blue-500 to-cyan-500"
     },
     {
       icon: Brain,
-      title: "Embeddings OpenAI",
-      description: "Representaciones semánticas para encontrar similitudes entre contenidos exitosos",
-      tech: "OpenAI GPT-4",
-      features: ["Vectorización semántica", "Análisis de contexto", "Patrones de engagement"],
+      title: "Conexiones Inteligentes",
+      description: "Encontramos videos similares que funcionaron para darte ideas precisas y probadas",
+      tech: "IA Predictiva",
+      features: ["Encuentra inspiración", "Conecta ideas ganadoras", "Predice el engagement"],
       color: "from-green-500 to-emerald-500"
     },
     {
       icon: MessageSquare,
-      title: "Insights con Claude",
-      description: "Transformación de datos complejos en recomendaciones accionables y comprensibles",
-      tech: "Anthropic Claude",
-      features: ["Análisis de sentimientos", "Recomendaciones personalizadas", "Predicciones precisas"],
+      title: "Consejos Personalizados",
+      description: "Convertimos toda la información en recomendaciones fáciles de entender y aplicar",
+      tech: "IA Conversacional",
+      features: ["Explicaciones simples", "Consejos específicos", "Estrategias claras"],
       color: "from-purple-500 to-pink-500"
     }
   ];
 
   return (
-    <section className="py-24 px-4 relative overflow-hidden">
+    <section id="solucion" className="py-24 px-4 relative overflow-hidden">
       {/* Animated Background */}
       <div className="absolute inset-0">
         <motion.div 
@@ -97,8 +97,8 @@ export const SolutionSection = () => {
             </h2>
             
             <p className="text-2xl text-text-secondary max-w-4xl mx-auto leading-relaxed">
-              Combinamos las <strong className="text-primary">mejores IAs del mercado</strong> para 
-              darte ventaja competitiva real en TikTok
+              Usamos <strong className="text-primary">inteligencia artificial avanzada</strong> para 
+              analizar millones de videos y darte la fórmula exacta del éxito
             </p>
           </motion.div>
           
@@ -182,9 +182,9 @@ export const SolutionSection = () => {
               
               <div className="grid md:grid-cols-3 gap-8">
                 {[
-                  { step: "01", title: "Analiza", desc: "Subimos tu video a nuestras IAs" },
-                  { step: "02", title: "Procesa", desc: "Extraemos patrones y elementos virales" },
-                  { step: "03", title: "Optimiza", desc: "Recibes insights accionables" }
+                  { step: "01", title: "Sube tu Video", desc: "Simplemente comparte el enlace de tu TikTok" },
+                  { step: "02", title: "Magia IA", desc: "Analizamos automáticamente qué funciona" },
+                  { step: "03", title: "Recibe Consejos", desc: "Obtienes recomendaciones claras y específicas" }
                 ].map((step, index) => (
                   <motion.div 
                     key={index}

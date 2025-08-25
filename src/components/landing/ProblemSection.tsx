@@ -47,7 +47,7 @@ export const ProblemSection = () => {
   ];
 
   return (
-    <section className="py-32 px-6 bg-gradient-to-br from-navy-light/80 to-background relative overflow-hidden">
+    <section id="problema" className="py-32 px-6 bg-gradient-to-br from-navy-light/80 to-background relative overflow-hidden">
       {/* Enhanced Background Pattern */}
       <div className="absolute inset-0 opacity-[0.03]">
         <div className="absolute inset-0" style={{

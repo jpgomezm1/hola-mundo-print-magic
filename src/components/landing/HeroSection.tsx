@@ -183,7 +183,7 @@ export const HeroSection = ({ onGetStarted }: HeroSectionProps) => {
             >
               <Button 
                 size="lg"
-                onClick={onGetStarted}
+                onClick={() => window.open('https://preview--tool-tiktok.lovable.app/', '_blank')}
                 className="bg-gradient-primary hover:opacity-90 transition-all px-16 py-8 text-2xl font-bold shadow-glow group relative overflow-hidden rounded-2xl"
               >
                 <motion.div
@@ -193,17 +193,9 @@ export const HeroSection = ({ onGetStarted }: HeroSectionProps) => {
                   transition={{ duration: 0.6 }}
                 />
                 <Sparkles className="w-7 h-7 mr-4 group-hover:rotate-12 transition-transform relative z-10" />
-                <span className="relative z-10">Comenzar Gratis</span>
+                <span className="relative z-10">Conoce la Herramienta</span>
                 <ArrowRight className="w-7 h-7 ml-4 group-hover:translate-x-2 transition-transform relative z-10" />
               </Button>
-            </motion.div>
-            
-            <motion.div 
-              className="flex items-center space-x-4 text-text-muted"
-              whileHover={{ scale: 1.05 }}
-            >
-              <CheckCircle className="w-6 h-6 text-success" />
-              <span className="text-xl font-medium">Sin tarjeta de crédito • Acceso inmediato</span>
             </motion.div>
           </motion.div>
 
