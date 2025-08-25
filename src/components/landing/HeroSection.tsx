@@ -147,8 +147,8 @@ export const HeroSection = ({ onGetStarted }: HeroSectionProps) => {
                   whileHover={{ scale: 1.05 }}
                 >
                   atención
-                  <motion.span 
-                    className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary block"
+                  <motion.div 
+                    className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary"
                     initial={{ scaleX: 0 }}
                     whileInView={{ scaleX: 1 }}
                     transition={{ delay: 1.5, duration: 0.6 }}
@@ -160,8 +160,8 @@ export const HeroSection = ({ onGetStarted }: HeroSectionProps) => {
                   whileHover={{ scale: 1.05 }}
                 >
                   oportunidad de negocio
-                  <motion.span 
-                    className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary block"
+                  <motion.div 
+                    className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary"
                     initial={{ scaleX: 0 }}
                     whileInView={{ scaleX: 1 }}
                     transition={{ delay: 2, duration: 0.6 }}
