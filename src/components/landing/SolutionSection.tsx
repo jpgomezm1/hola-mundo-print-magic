@@ -50,155 +50,99 @@ export const SolutionSection = () => {
   ];
 
   return (
-    <section id="solucion" className="py-24 px-4 relative overflow-hidden">
-      {/* Animated Background */}
-      <div className="absolute inset-0">
+    <section id="solucion" className="py-20 px-6">
+      <div className="container mx-auto max-w-6xl">
         <motion.div 
-          className="absolute top-1/4 right-1/4 w-96 h-96 bg-gradient-to-r from-primary/10 to-success/10 rounded-full blur-3xl"
-          animate={{ 
-            scale: [1, 1.2, 1],
-            rotate: [0, 180, 360]
-          }}
-          transition={{ 
-            duration: 20,
-            repeat: Infinity,
-            ease: "linear"
-          }}
-        />
-      </div>
-
-      <div className="container mx-auto max-w-7xl relative z-10">
-        <motion.div 
-          className="text-center space-y-20"
+          className="text-center space-y-16"
           initial="initial"
           whileInView="animate"
-          viewport={{ once: true, margin: "-100px" }}
+          viewport={{ once: true }}
           variants={stagger}
         >
+          {/* Clean Header */}
           <motion.div variants={fadeInUp} className="space-y-6">
-            <motion.div 
-              className="inline-flex items-center space-x-2 bg-success/10 border border-success/20 rounded-full px-4 py-2 text-success text-sm font-medium"
-              whileHover={{ scale: 1.05 }}
-            >
+            <div className="inline-flex items-center space-x-2 bg-success/10 border border-success/20 rounded-full px-4 py-2 text-success text-sm font-medium">
               <Sparkles className="w-4 h-4" />
-              <span>Solución Innovadora</span>
-            </motion.div>
+              <span>La Solución</span>
+            </div>
             
-            <h2 className="text-5xl md:text-6xl font-bold text-text-primary mb-6">
-              La Solución{' '}
-              <motion.span 
-                className="bg-gradient-primary bg-clip-text text-transparent"
-                initial={{ opacity: 0, scale: 0.8 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.3, duration: 0.5 }}
-              >
-                Inteligente
-              </motion.span>
+            <h2 className="text-5xl md:text-6xl font-black text-text-primary">
+              IA que{' '}
+              <span className="bg-gradient-primary bg-clip-text text-transparent">
+                Funciona
+              </span>
             </h2>
             
-            <p className="text-2xl text-text-secondary max-w-4xl mx-auto leading-relaxed">
-              Usamos <strong className="text-primary">inteligencia artificial avanzada</strong> para 
-              analizar millones de videos y darte la fórmula exacta del éxito
+            <p className="text-xl text-text-secondary max-w-4xl mx-auto leading-relaxed">
+              Analizamos millones de videos exitosos para darte la{' '}
+              <span className="text-primary font-semibold">fórmula exacta del éxito</span>
             </p>
           </motion.div>
           
+          {/* Clean Technology Grid */}
           <motion.div 
-            className="grid lg:grid-cols-3 gap-8"
+            className="grid md:grid-cols-3 gap-8"
             variants={stagger}
           >
             {aiTechnologies.map((tech, index) => (
               <motion.div 
                 key={index}
-                className="group relative"
+                className="bg-card/30 border border-border/30 rounded-2xl p-6 space-y-4 hover:border-primary/30 transition-all duration-300"
                 variants={scaleIn}
-                whileHover={{ 
-                  scale: 1.05,
-                  transition: { duration: 0.3 }
-                }}
               >
-                <div className="bg-gradient-to-br from-card to-card/50 border border-border rounded-3xl p-8 space-y-6 h-full relative overflow-hidden group-hover:border-primary/50 transition-all duration-300">
-                  {/* Animated gradient overlay */}
-                  <motion.div 
-                    className={`absolute inset-0 bg-gradient-to-br ${tech.color} opacity-0 group-hover:opacity-10 transition-opacity duration-500`}
-                    initial={false}
-                  />
-                  
-                  <div className="relative z-10">
-                    <motion.div 
-                      className="w-16 h-16 bg-gradient-primary rounded-2xl flex items-center justify-center mx-auto group-hover:scale-110 transition-transform duration-300"
-                      whileHover={{ rotate: 15 }}
+                <div className="w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center">
+                  <tech.icon className="w-6 h-6 text-text-primary" />
+                </div>
+                
+                <h3 className="text-xl font-bold text-text-primary">
+                  {tech.title}
+                </h3>
+                
+                <p className="text-text-secondary leading-relaxed">
+                  {tech.description}
+                </p>
+                
+                <div className="space-y-2">
+                  {tech.features.map((feature, featureIndex) => (
+                    <div 
+                      key={featureIndex}
+                      className="flex items-center space-x-2 text-sm text-text-muted"
                     >
-                      <tech.icon className="w-8 h-8 text-text-primary" />
-                    </motion.div>
-                    
-                    <h3 className="text-2xl font-semibold text-text-primary group-hover:text-primary transition-colors">
-                      {tech.title}
-                    </h3>
-                    
-                    <p className="text-text-secondary leading-relaxed">
-                      {tech.description}
-                    </p>
-                    
-                    <motion.div 
-                      className="inline-block bg-primary/10 text-primary text-sm font-medium px-4 py-2 rounded-full"
-                      initial={{ scale: 0 }}
-                      whileInView={{ scale: 1 }}
-                      transition={{ delay: 0.3 + index * 0.1, duration: 0.3 }}
-                    >
-                      {tech.tech}
-                    </motion.div>
-                    
-                    {/* Features List */}
-                    <div className="space-y-2 pt-4">
-                      {tech.features.map((feature, featureIndex) => (
-                        <motion.div 
-                          key={featureIndex}
-                          className="flex items-center space-x-2 text-sm text-text-muted"
-                          initial={{ opacity: 0, x: -20 }}
-                          whileInView={{ opacity: 1, x: 0 }}
-                          transition={{ delay: 0.5 + featureIndex * 0.1, duration: 0.3 }}
-                        >
-                          <div className="w-1.5 h-1.5 bg-primary rounded-full" />
-                          <span>{feature}</span>
-                        </motion.div>
-                      ))}
+                      <div className="w-1 h-1 bg-primary rounded-full" />
+                      <span>{feature}</span>
                     </div>
-                  </div>
+                  ))}
                 </div>
               </motion.div>
             ))}
           </motion.div>
 
-          {/* How it Works */}
+          {/* Simple Process */}
           <motion.div 
-            className="bg-gradient-to-r from-primary/5 to-success/5 border border-primary/20 rounded-3xl p-12 max-w-5xl mx-auto"
+            className="bg-primary/5 border border-primary/20 rounded-2xl p-8 max-w-4xl mx-auto"
             variants={fadeInUp}
-            whileHover={{ scale: 1.02 }}
           >
-            <div className="text-center space-y-8">
-              <h3 className="text-3xl font-bold text-text-primary">
-                Cómo Funciona la Magia
-              </h3>
-              
-              <div className="grid md:grid-cols-3 gap-8">
-                {[
-                  { step: "01", title: "Sube tu Video", desc: "Simplemente comparte el enlace de tu TikTok" },
-                  { step: "02", title: "Magia IA", desc: "Analizamos automáticamente qué funciona" },
-                  { step: "03", title: "Recibe Consejos", desc: "Obtienes recomendaciones claras y específicas" }
-                ].map((step, index) => (
-                  <motion.div 
-                    key={index}
-                    className="text-center space-y-3"
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 + index * 0.1, duration: 0.5 }}
-                  >
-                    <div className="text-4xl font-bold text-primary">{step.step}</div>
-                    <h4 className="text-xl font-semibold text-text-primary">{step.title}</h4>
-                    <p className="text-text-secondary">{step.desc}</p>
-                  </motion.div>
-                ))}
-              </div>
+            <h3 className="text-2xl font-bold text-text-primary text-center mb-8">
+              Cómo Funciona
+            </h3>
+            
+            <div className="grid md:grid-cols-3 gap-6">
+              {[
+                { step: "1", title: "Sube tu Video", desc: "Comparte el enlace de TikTok" },
+                { step: "2", title: "IA Analiza", desc: "Procesamos automáticamente" },
+                { step: "3", title: "Recibe Insights", desc: "Consejos claros y precisos" }
+              ].map((step, index) => (
+                <div 
+                  key={index}
+                  className="text-center space-y-3"
+                >
+                  <div className="w-8 h-8 bg-primary text-text-primary rounded-full flex items-center justify-center mx-auto font-bold">
+                    {step.step}
+                  </div>
+                  <h4 className="font-semibold text-text-primary">{step.title}</h4>
+                  <p className="text-text-secondary text-sm">{step.desc}</p>
+                </div>
+              ))}
             </div>
           </motion.div>
         </motion.div>

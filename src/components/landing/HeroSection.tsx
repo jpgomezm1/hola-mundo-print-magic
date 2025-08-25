@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Sparkles, ArrowRight, CheckCircle } from 'lucide-react';
+import { Sparkles, ArrowRight } from 'lucide-react';
 
 interface HeroSectionProps {
   onGetStarted: () => void;
@@ -21,21 +21,15 @@ export const HeroSection = ({ onGetStarted }: HeroSectionProps) => {
     }
   };
 
-  const scaleIn = {
-    initial: { opacity: 0, scale: 0.8 },
-    animate: { opacity: 1, scale: 1 },
-    transition: { duration: 0.5, ease: "easeOut" }
-  };
-
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-navy-dark via-background to-navy-light">
-      {/* Clean Background with Subtle Effects */}
+    <section className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-navy-light/20">
+      {/* Clean minimal background */}
       <div className="absolute inset-0">
         <motion.div 
-          className="absolute top-20 left-20 w-72 h-72 bg-purple-bright/10 rounded-full blur-3xl"
+          className="absolute top-1/4 right-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl"
           animate={{ 
-            scale: [1, 1.2, 1],
-            opacity: [0.2, 0.4, 0.2]
+            scale: [1, 1.1, 1],
+            opacity: [0.3, 0.5, 0.3]
           }}
           transition={{ 
             duration: 8,
@@ -43,110 +37,60 @@ export const HeroSection = ({ onGetStarted }: HeroSectionProps) => {
             ease: "easeInOut"
           }}
         />
-        <motion.div 
-          className="absolute bottom-20 right-20 w-96 h-96 bg-primary/8 rounded-full blur-3xl"
-          animate={{ 
-            scale: [1, 1.1, 1],
-            opacity: [0.2, 0.3, 0.2]
-          }}
-          transition={{ 
-            duration: 10,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        />
       </div>
 
-      <div className="container mx-auto max-w-7xl px-6 py-32 relative z-10">
+      <div className="container mx-auto max-w-6xl px-6 py-20 relative z-10">
         <motion.div 
-          className="text-center space-y-12"
+          className="text-center space-y-16"
           initial="initial"
           animate="animate"
           variants={stagger}
         >
-          {/* Badge */}
-          <motion.div variants={fadeInUp} className="pt-8">
-            <motion.div 
-              className="inline-flex items-center space-x-3 bg-gradient-to-r from-purple-bright/15 to-primary/15 backdrop-blur-sm border border-purple-bright/30 rounded-full px-6 py-3 text-purple-light font-medium"
-              whileHover={{ scale: 1.02 }}
-            >
-              <motion.div
-                animate={{ rotate: [0, 360] }}
-                transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-              >
-                <Sparkles className="w-4 h-4" />
-              </motion.div>
-              <span className="text-sm">Powered by AI • OpenAI • Gemini • Claude</span>
-            </motion.div>
-          </motion.div>
-          
-          {/* Main Heading */}
-          <motion.div className="space-y-8" variants={fadeInUp}>
-            <div className="space-y-8">
-              <h1 className="text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-black text-text-primary leading-[0.9] tracking-tight">
-                Sé{' '}
-                <motion.span 
-                  className="bg-gradient-primary bg-clip-text text-transparent relative inline-block"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.3, duration: 0.8 }}
-                >
-                  Viral
-                  <motion.div 
-                    className="absolute -bottom-2 left-0 right-0 h-1 bg-gradient-primary rounded-full"
-                    initial={{ scaleX: 0 }}
-                    animate={{ scaleX: 1 }}
-                    transition={{ delay: 0.8, duration: 0.6 }}
-                  />
-                </motion.span>
-                <br />
-                <motion.span 
-                  className="text-text-secondary block"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6, duration: 0.8 }}
-                >
-                  Consistentemente
-                </motion.span>
-              </h1>
-              
-              <motion.p 
-                className="text-xl md:text-2xl lg:text-3xl text-text-secondary max-w-5xl mx-auto leading-relaxed font-light"
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1, duration: 0.8 }}
-              >
-                En la era de la IA, la guerra es por la{' '}
-                <span className="text-primary font-semibold">atención</span>
-                . Domina TikTok con inteligencia artificial y convierte cada video en una{' '}
-                <span className="text-primary font-semibold">oportunidad de negocio</span>.
-              </motion.p>
+          {/* Minimal Badge */}
+          <motion.div variants={fadeInUp}>
+            <div className="inline-flex items-center space-x-2 bg-primary/5 border border-primary/20 rounded-full px-4 py-2 text-primary text-sm font-medium">
+              <Sparkles className="w-4 h-4" />
+              <span>Powered by AI</span>
             </div>
           </motion.div>
           
-          {/* CTA Button */}
+          {/* Clean Typography */}
+          <motion.div className="space-y-8" variants={fadeInUp}>
+            <h1 className="text-6xl md:text-7xl lg:text-8xl font-black text-text-primary leading-[0.9] tracking-tight">
+              Sé{' '}
+              <span className="bg-gradient-primary bg-clip-text text-transparent">
+                Viral
+              </span>
+              <br />
+              <span className="text-text-secondary/80 text-5xl md:text-6xl lg:text-7xl">
+                Consistentemente
+              </span>
+            </h1>
+            
+            <p className="text-xl md:text-2xl text-text-secondary max-w-4xl mx-auto leading-relaxed font-light">
+              En la era de la IA, la guerra es por la <span className="text-primary font-medium">atención</span>.
+              <br />
+              Domina TikTok con inteligencia artificial y convierte cada video en una{' '}
+              <span className="text-primary font-medium">oportunidad de negocio</span>.
+            </p>
+          </motion.div>
+          
+          {/* Simple CTA */}
           <motion.div 
-            className="flex justify-center"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.3, duration: 0.8 }}
+            transition={{ delay: 0.8, duration: 0.8 }}
           >
-            <motion.div
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+            <Button 
+              size="lg"
+              onClick={() => window.open('https://preview--tool-tiktok.lovable.app/', '_blank')}
+              className="bg-gradient-primary hover:opacity-90 transition-all px-8 py-4 text-lg font-semibold rounded-xl"
             >
-              <Button 
-                size="lg"
-                onClick={() => window.open('https://preview--tool-tiktok.lovable.app/', '_blank')}
-                className="bg-gradient-primary hover:opacity-90 transition-all px-12 py-6 text-xl font-bold rounded-xl shadow-glow"
-              >
-                <Sparkles className="w-6 h-6 mr-3" />
-                Comenzar Gratis
-                <ArrowRight className="w-6 h-6 ml-3" />
-              </Button>
-            </motion.div>
+              <Sparkles className="w-5 h-5 mr-2" />
+              Comenzar Gratis
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </Button>
           </motion.div>
-
         </motion.div>
       </div>
     </section>
