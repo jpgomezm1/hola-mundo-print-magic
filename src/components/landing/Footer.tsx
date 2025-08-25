@@ -64,10 +64,10 @@ export const Footer = ({ onGetStarted }: FooterProps) => {
               <Button 
                 size="lg"
                 onClick={() => window.open('https://preview--tool-tiktok.lovable.app/', '_blank')}
-                className="bg-gradient-primary hover:opacity-90 transition-all px-10 py-4 text-lg font-semibold rounded-xl shadow-lg"
+                className="bg-gradient-primary hover:opacity-90 transition-all px-8 py-4 text-lg font-semibold rounded-xl"
               >
                 <Brain className="w-5 h-5 mr-2" />
-                Explora la Herramienta
+                Conoce la Herramienta
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </motion.div>
