@@ -558,6 +558,24 @@ serve(async (req) => {
       // Analyze with AI
       const analysis = await analyzeVideoContent(videoData, accountContext);
       
+      // Map video theme to allowed values
+      const mapTheme = (theme: string) => {
+        const normalizedTheme = String(theme || '').toLowerCase().trim();
+        if (normalizedTheme.includes('educar') || normalizedTheme.includes('educativo') || normalizedTheme.includes('enseñar')) {
+          return 'Educar';
+        }
+        if (normalizedTheme.includes('entretener') || normalizedTheme.includes('entretenimiento') || normalizedTheme.includes('divertir')) {
+          return 'Entretener';
+        }
+        if (normalizedTheme.includes('identificar') || normalizedTheme.includes('identidad') || normalizedTheme.includes('relacionar')) {
+          return 'Identificar';
+        }
+        if (normalizedTheme.includes('activar') || normalizedTheme.includes('acción') || normalizedTheme.includes('motivar')) {
+          return 'Activar';
+        }
+        return 'Entretener'; // Default fallback
+      };
+
       // Save to database with enhanced data
       const { data: savedVideo, error: saveError } = await supabase
         .from('reference_videos')
@@ -571,7 +589,7 @@ serve(async (req) => {
           editing_style: analysis.editing_style,
           duration_seconds: videoData.duration,
           cta_type: analysis.cta_type,
-          video_theme: analysis.video_theme,
+          video_theme: mapTheme(analysis.video_theme),
           tone_style: analysis.tone_style,
           visual_elements: analysis.visual_elements,
           audio_style: analysis.audio_style,
