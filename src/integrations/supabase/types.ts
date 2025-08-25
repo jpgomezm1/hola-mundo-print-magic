@@ -717,6 +717,10 @@ export type Database = {
         Args: { "": string } | { "": unknown }
         Returns: unknown
       }
+      cleanup_temp_videos: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       exec_sql: {
         Args: { params?: Json; sql: string }
         Returns: {
