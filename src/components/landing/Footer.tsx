@@ -400,30 +400,42 @@ export const Footer = ({ onGetStarted }: FooterProps) => {
             </motion.div>
           </motion.div>
           
-          {/* Enhanced Secret Login - Hidden but More Stylish */}
+          {/* Secret Login - Ultra Discrete */}
           <motion.div 
-            className="flex justify-center mt-8"
+            className="flex justify-center mt-12"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 2.5, duration: 1 }}
+            transition={{ delay: 4, duration: 2 }}
           >
             <motion.button
               onClick={onGetStarted}
-              className="relative text-text-muted/20 hover:text-primary/60 transition-all duration-500 text-lg font-black tracking-wider group"
-              whileHover={{ scale: 1.1, letterSpacing: '0.3em' }}
-              transition={{ type: "spring", stiffness: 300 }}
+              className="relative text-text-muted/15 hover:text-text-muted/40 transition-all duration-700 text-xs tracking-[0.4em] group select-none"
+              whileHover={{ 
+                scale: 1.05,
+                letterSpacing: '0.5em'
+              }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 400, damping: 15 }}
             >
               <motion.span
-                animate={{ opacity: [0.2, 0.4, 0.2] }}
-                transition={{ duration: 3, repeat: Infinity }}
+                animate={{ 
+                  opacity: [0.1, 0.25, 0.1],
+                  scale: [1, 1.02, 1]
+                }}
+                transition={{ 
+                  duration: 4, 
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+                className="font-mono"
               >
-                •••
+                • • •
               </motion.span>
               
-              {/* Hover effect */}
+              {/* Ultra subtle hover glow */}
               <motion.div 
-                className="absolute inset-0 bg-gradient-primary opacity-0 group-hover:opacity-20 blur-lg rounded-lg"
-                transition={{ duration: 0.3 }}
+                className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 blur-md rounded-full"
+                transition={{ duration: 0.5 }}
               />
             </motion.button>
           </motion.div>
