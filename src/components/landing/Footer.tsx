@@ -274,7 +274,7 @@ export const Footer = ({ onGetStarted }: FooterProps) => {
               >
                 <Button 
                   size="lg"
-                  onClick={() => window.open('https://tool-tiktok.lovable.app/dashboard#access_token=eyJhbGciOiJIUzI1NiIsImtpZCI6IitZSVR2VzJQMGw0aldDRFoiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2x2ZGltdGllZmJqZ2x5d29rbmNyLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiJhNTg3ZmM4OC01MjI5LTRlZGEtYTA4Zi1kMTEzMzdmNjIyMzEiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzU2MjIwMDAxLCJpYXQiOjE3NTYxMzMwMDEsImVtYWlsIjoianBnb21lekBzdGF5aXJyZWxldmFudC5jb20iLCJwaG9uZSI6IiIsImFwcF9tZXRhZGF0YSI6eyJwcm92aWRlciI6ImVtYWlsIiwicHJvdmlkZXJzIjpbImVtYWlsIl19LCJ1c2VyX21ldGFkYXRhIjp7ImRpc3BsYXlfbmFtZSI6ImlycmVsZXZhbnQgY2x1YiIsImVtYWlsIjoianBnb21lekBzdGF5aXJyZWxldmFudC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwicGhvbmVfdmVyaWZpZWQiOmZhbHNlLCJzdWIiOiJhNTg3ZmM4OC01MjI5LTRlZGEtYTA4Zi1kMTEzMzdmNjIyMzEifSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJvdHAiLCJ0aW1lc3RhbXAiOjE3NTYxMzMwMDF9XSwic2Vzc2lvbl9pZCI6IjNjYmNiYmJlLWRlOGItNDFmOC1iMGM3LTZiYmU5NGU4OGI1YSIsImlzX2Fub255bW91cyI6ZmFsc2V9.qNnuRI4oczhULVstfVyHt9qc3XpkcIhiCNK6UTvbRko&expires_at=1756220001&expires_in=86400&refresh_token=crxt6abqlrj5&token_type=bearer&type=magiclink', '_blank')}
+                  onClick={onGetStarted}
                   className="bg-gradient-primary hover:from-primary/90 hover:to-primary transition-all duration-300 px-16 py-6 text-xl font-bold rounded-3xl shadow-2xl shadow-primary/30 border border-primary/30 backdrop-blur-sm group relative overflow-hidden"
                 >
                   {/* Button glow effect */}

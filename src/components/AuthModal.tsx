@@ -74,94 +74,70 @@ export const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-card border-border">
+      <DialogContent className="bg-card border-border max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-2xl text-text-primary text-center">Comenzar</DialogTitle>
+          <DialogTitle className="text-2xl text-text-primary text-center">🚀 ¡Explorar Herramienta!</DialogTitle>
           <DialogDescription className="text-text-secondary text-center">
-            Inicia sesión o crea una cuenta para acceder a tu herramienta de análisis TikTok
+            <span className="block text-lg font-semibold text-primary mb-2">
+              👆 Solo haz click en "Iniciar Sesión"
+            </span>
+            Los datos ya están listos para que explores todas las funcionalidades
           </DialogDescription>
         </DialogHeader>
         
-        <Tabs defaultValue="signin" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="signin">Iniciar Sesión</TabsTrigger>
-            <TabsTrigger value="signup">Crear Cuenta</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="signin" className="space-y-4">
-            <form onSubmit={handleSignIn} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="signin-email">Email</Label>
-                <Input
-                  id="signin-email"
-                  name="email"
-                  type="email"
-                  placeholder="Ingresa tu email"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="signin-password">Contraseña</Label>
-                <Input
-                  id="signin-password"
-                  name="password"
-                  type="password"
-                  placeholder="Ingresa tu contraseña"
-                  required
-                />
-              </div>
+        <div className="space-y-4">
+          <form onSubmit={handleSignIn} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="signin-email" className="text-sm text-text-secondary">Email (ya configurado)</Label>
+              <Input
+                id="signin-email"
+                name="email"
+                type="email"
+                value="jpgomez@stayirrelevant.com"
+                readOnly
+                className="bg-muted text-text-secondary cursor-default"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="signin-password" className="text-sm text-text-secondary">Contraseña (ya configurada)</Label>
+              <Input
+                id="signin-password"
+                name="password"
+                type="password"
+                value="Nov2011*"
+                readOnly
+                className="bg-muted text-text-secondary cursor-default"
+              />
+            </div>
+            
+            <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 text-center">
+              <p className="text-sm text-primary font-medium mb-3">
+                ✨ Todo está listo para explorar
+              </p>
               <Button 
                 type="submit" 
-                className="w-full bg-gradient-primary hover:opacity-90 transition-opacity"
+                className="w-full bg-gradient-primary hover:opacity-90 transition-all duration-300 text-lg py-3 font-bold shadow-lg shadow-primary/25"
                 disabled={loading}
               >
-                {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+                {loading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Iniciando sesión...
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    🎯 Iniciar Sesión y Explorar
+                  </div>
+                )}
               </Button>
-            </form>
-          </TabsContent>
-          
-          <TabsContent value="signup" className="space-y-4">
-            <form onSubmit={handleSignUp} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="signup-name">Nombre</Label>
-                <Input
-                  id="signup-name"
-                  name="displayName"
-                  type="text"
-                  placeholder="Tu nombre o marca"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="signup-email">Email</Label>
-                <Input
-                  id="signup-email"
-                  name="email"
-                  type="email"
-                  placeholder="Ingresa tu email"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="signup-password">Contraseña</Label>
-                <Input
-                  id="signup-password"
-                  name="password"
-                  type="password"
-                  placeholder="Crea una contraseña"
-                  required
-                />
-              </div>
-              <Button 
-                type="submit" 
-                className="w-full bg-gradient-primary hover:opacity-90 transition-opacity"
-                disabled={loading}
-              >
-                {loading ? 'Creando cuenta...' : 'Crear Cuenta'}
-              </Button>
-            </form>
-          </TabsContent>
-        </Tabs>
+            </div>
+            
+            <div className="text-center text-xs text-text-secondary bg-background/50 rounded-lg p-3">
+              <p>🔒 Acceso demo con datos reales</p>
+              <p>Explora todas las funcionalidades sin limitaciones</p>
+            </div>
+          </form>
+        </div>
       </DialogContent>
     </Dialog>
   );
