@@ -225,14 +225,14 @@ export const EnhancedReferenceCard: React.FC<EnhancedReferenceCardProps> = ({
         </CardHeader>
 
         <CardContent className="space-y-4">
-          {/* Hook Section */}
+          {/* Hook Analysis - PROTAGONISTA */}
           {video.hook && (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <div className="p-1 rounded-full bg-yellow-100 text-yellow-600">
                   <Zap className="w-3 h-3" />
                 </div>
-                <span className="text-sm font-semibold text-muted-foreground">Hook</span>
+                <span className="text-sm font-semibold text-muted-foreground">Hook Identificado</span>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -242,18 +242,94 @@ export const EnhancedReferenceCard: React.FC<EnhancedReferenceCardProps> = ({
                   <Copy className="w-3 h-3" />
                 </Button>
               </div>
-              <div className="bg-gradient-to-r from-yellow-50 via-orange-50 to-yellow-50 dark:from-yellow-900/20 dark:via-orange-900/20 dark:to-yellow-900/20 p-3 rounded-lg border-l-4 border-yellow-400">
-                <p className="text-sm italic line-clamp-2 text-yellow-800 dark:text-yellow-200">
+              <div className="bg-gradient-to-r from-yellow-50 via-orange-50 to-yellow-50 dark:from-yellow-900/20 dark:via-orange-900/20 dark:to-yellow-900/20 p-4 rounded-lg border-l-4 border-yellow-400">
+                <p className="text-sm font-medium line-clamp-3 text-yellow-800 dark:text-yellow-200">
                   "{video.hook}"
                 </p>
               </div>
             </div>
           )}
 
-          {/* Viral Score Component */}
+          {/* Script Analysis - PROTAGONISTA */}
+          {video.script && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="p-1 rounded-full bg-blue-100 text-blue-600">
+                  <Target className="w-3 h-3" />
+                </div>
+                <span className="text-sm font-semibold text-muted-foreground">Script Analizado</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => copyToClipboard(video.script!, 'Script')}
+                  className="h-6 w-6 p-0 ml-auto opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <Copy className="w-3 h-3" />
+                </Button>
+              </div>
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-3 rounded-lg border-l-4 border-blue-400">
+                <p className="text-sm line-clamp-4 text-blue-800 dark:text-blue-200">
+                  {video.script}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Análisis de Elementos Virales */}
+          {video.extracted_insights?.viral_factors && video.extracted_insights.viral_factors.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="p-1 rounded-full bg-purple-100 text-purple-600">
+                  <Sparkles className="w-3 h-3" />
+                </div>
+                <span className="text-sm font-semibold text-muted-foreground">Elementos Virales</span>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {video.extracted_insights.viral_factors.slice(0, 4).map((factor: string, index: number) => (
+                  <Badge key={index} className="bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-200 text-xs">
+                    <Star className="w-2 h-2 mr-1" />
+                    {factor}
+                  </Badge>
+                ))}
+                {video.extracted_insights.viral_factors.length > 4 && (
+                  <Badge variant="outline" className="text-xs">
+                    +{video.extracted_insights.viral_factors.length - 4} más
+                  </Badge>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Análisis de Estilo y Tema */}
+          <div className="grid grid-cols-2 gap-3">
+            {video.video_theme && (
+              <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                <div className="flex items-center gap-1 mb-1">
+                  <Hash className="w-3 h-3 text-green-600" />
+                  <span className="text-xs text-green-600 font-medium">Tema</span>
+                </div>
+                <p className="text-sm font-bold text-green-800 dark:text-green-200">
+                  {video.video_theme}
+                </p>
+              </div>
+            )}
+            {video.editing_style && (
+              <div className="p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                <div className="flex items-center gap-1 mb-1">
+                  <Camera className="w-3 h-3 text-orange-600" />
+                  <span className="text-xs text-orange-600 font-medium">Edición</span>
+                </div>
+                <p className="text-sm font-bold text-orange-800 dark:text-orange-200">
+                  {video.editing_style}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Viral Score Card */}
           <ViralScoreCard video={video} />
 
-          {/* Quick Stats Grid */}
+          {/* Métricas de Performance */}
           {video.engagement_metrics && (
             <div className="grid grid-cols-2 gap-3">
               {video.engagement_metrics.views && (
@@ -298,74 +374,15 @@ export const EnhancedReferenceCard: React.FC<EnhancedReferenceCardProps> = ({
             </div>
           )}
 
-          {/* Action Buttons */}
-          <div className="grid grid-cols-2 gap-2 pt-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowDetailModal(true)}
-              className="w-full hover:bg-primary/5 transition-colors"
-            >
-              <Maximize2 className="w-4 h-4 mr-2" />
-              Analizar
-            </Button>
-
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button size="sm" className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary">
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Adaptar
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-primary" />
-                    Adaptar Contenido a tu Nicho
-                  </DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div className="bg-muted/50 p-4 rounded-lg">
-                    <p className="text-sm text-muted-foreground mb-2">Video de referencia:</p>
-                    <p className="font-medium">{video.title}</p>
-                    {video.hook && (
-                      <p className="text-sm text-muted-foreground mt-1 italic">"{video.hook}"</p>
-                    )}
-                  </div>
-                  <div>
-                    <label htmlFor="adaptation-prompt" className="text-sm font-medium">
-                      ¿Cómo quieres adaptar este video a tu contenido?
-                    </label>
-                    <Textarea
-                      id="adaptation-prompt"
-                      placeholder="Ej: Quiero adaptar este hook para mi nicho de fitness, enfocándome en principiantes que quieren perder peso en casa..."
-                      value={adaptationPrompt}
-                      onChange={(e) => setAdaptationPrompt(e.target.value)}
-                      rows={4}
-                      className="mt-2"
-                    />
-                  </div>
-                  <Button 
-                    onClick={handleAdaptContent}
-                    disabled={adapting || !adaptationPrompt.trim()}
-                    className="w-full"
-                  >
-                    {adapting ? (
-                      <>
-                        <div className="w-4 h-4 mr-2 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                        Adaptando con IA...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-4 h-4 mr-2" />
-                        Generar Adaptación
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
+          {/* Action Button - Solo Ver Análisis Completo */}
+          <Button
+            variant="outline"
+            onClick={() => setShowDetailModal(true)}
+            className="w-full hover:bg-primary/5 transition-colors"
+          >
+            <BarChart3 className="w-4 h-4 mr-2" />
+            Ver Análisis Completo
+          </Button>
         </CardContent>
       </Card>
 
@@ -646,6 +663,76 @@ export const EnhancedReferenceCard: React.FC<EnhancedReferenceCardProps> = ({
                   </CardContent>
                 </Card>
               )}
+
+              {/* Adaptation Section - SECUNDARIA */}
+              <Card>
+                <CardHeader>
+                  <h4 className="font-semibold flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-primary" />
+                    Adaptar a tu Nicho
+                  </h4>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    Usa IA para adaptar este video exitoso a tu contenido específico
+                  </p>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary">
+                        <Sparkles className="w-4 h-4 mr-2" />
+                        Generar Adaptación
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-2xl">
+                      <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                          <Sparkles className="w-5 h-5 text-primary" />
+                          Adaptar Contenido a tu Nicho
+                        </DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div className="bg-muted/50 p-4 rounded-lg">
+                          <p className="text-sm text-muted-foreground mb-2">Video de referencia:</p>
+                          <p className="font-medium">{video.title}</p>
+                          {video.hook && (
+                            <p className="text-sm text-muted-foreground mt-1 italic">"{video.hook}"</p>
+                          )}
+                        </div>
+                        <div>
+                          <label htmlFor="adaptation-prompt" className="text-sm font-medium">
+                            ¿Cómo quieres adaptar este video a tu contenido?
+                          </label>
+                          <Textarea
+                            id="adaptation-prompt"
+                            placeholder="Ej: Quiero adaptar este hook para mi nicho de fitness, enfocándome en principiantes que quieren perder peso en casa..."
+                            value={adaptationPrompt}
+                            onChange={(e) => setAdaptationPrompt(e.target.value)}
+                            rows={4}
+                            className="mt-2"
+                          />
+                        </div>
+                        <Button 
+                          onClick={handleAdaptContent}
+                          disabled={adapting || !adaptationPrompt.trim()}
+                          className="w-full"
+                        >
+                          {adapting ? (
+                            <>
+                              <div className="w-4 h-4 mr-2 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                              Adaptando con IA...
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="w-4 h-4 mr-2" />
+                              Generar Adaptación
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </DialogContent>
