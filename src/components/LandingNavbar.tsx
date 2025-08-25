@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Brain, Zap, Target } from 'lucide-react';
+import { Brain, Sparkles, CheckCircle } from 'lucide-react';
 
 interface LandingNavbarProps {
   onSignInClick: () => void;
@@ -34,6 +34,27 @@ export const LandingNavbar = ({ onSignInClick }: LandingNavbarProps) => {
           </div>
         </motion.div>
         
+        <div className="flex items-center space-x-2">
+          <motion.div 
+            className="flex items-center space-x-2 bg-gradient-to-r from-purple-bright/10 to-primary/10 backdrop-blur-sm border border-purple-bright/20 rounded-full px-4 py-2"
+          >
+            <motion.div
+              animate={{ rotate: [0, 360] }}
+              transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+            >
+              <Sparkles className="w-4 h-4 text-purple-light" />
+            </motion.div>
+            <span className="text-sm text-purple-light font-medium">Powered by AI</span>
+          </motion.div>
+          
+          <motion.div 
+            className="flex items-center space-x-2 bg-success/10 backdrop-blur-sm border border-success/20 rounded-full px-4 py-2"
+          >
+            <CheckCircle className="w-4 h-4 text-success" />
+            <span className="text-sm text-success font-medium">Viralidad Consistente</span>
+          </motion.div>
+        </div>
+        
         <div className="hidden lg:flex items-center space-x-8">
           {[
             { href: "#problema", label: "El Problema" },
@@ -61,9 +82,9 @@ export const LandingNavbar = ({ onSignInClick }: LandingNavbarProps) => {
         >
           <Button 
             onClick={() => window.open('https://preview--tool-tiktok.lovable.app/', '_blank')}
-            className="bg-gradient-primary hover:opacity-90 transition-all shadow-glow px-8 py-3 font-bold text-lg group"
+            className="bg-gradient-primary hover:opacity-90 transition-all shadow-glow px-6 py-2 font-bold rounded-lg"
           >
-            <span className="group-hover:scale-105 transition-transform">Explora la Herramienta</span>
+            Iniciar Sesión
           </Button>
         </motion.div>
       </div>
