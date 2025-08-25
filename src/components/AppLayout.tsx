@@ -67,7 +67,6 @@ export function AppLayout({ children }: AppLayoutProps) {
           <main className="flex-1 overflow-auto bg-gradient-to-br from-background to-navy-light/20">
             <div className="p-xl">
               <Breadcrumbs />
-              <PageHeader />
               {children}
             </div>
           </main>
