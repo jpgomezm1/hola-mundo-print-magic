@@ -487,7 +487,7 @@ serve(async (req) => {
       // Analyze with AI
       const analysis = await analyzeVideoContent(videoData, accountContext);
       
-      // Save to database
+      // Save to database with enhanced data
       const { data: savedVideo, error: saveError } = await supabase
         .from('reference_videos')
         .insert({
@@ -511,7 +511,31 @@ serve(async (req) => {
           tags: tags || [],
           category: category || 'general',
           notes: notes || '',
-          engagement_metrics: videoData.stats || null
+          engagement_metrics: videoData.stats || null,
+          // Enhanced fields
+          author_info: videoData.author ? {
+            username: videoData.author.username,
+            nickname: videoData.author.nickname,
+            followers: videoData.author.followers,
+            verified: videoData.author.verified,
+            avatar: videoData.author.avatar
+          } : {},
+          music_info: videoData.musicMeta ? {
+            title: videoData.musicMeta.title,
+            author: videoData.musicMeta.author,
+            play_url: videoData.musicMeta.playUrl
+          } : {},
+          performance_metrics: videoData.stats ? {
+            views: videoData.stats.views,
+            likes: videoData.stats.likes,
+            comments: videoData.stats.comments,
+            shares: videoData.stats.shares,
+            engagement_rate: videoData.stats.views > 0 ? 
+              ((videoData.stats.likes + videoData.stats.comments + videoData.stats.shares) / videoData.stats.views * 100) : 0
+          } : {},
+          viral_score: analysis.insights?.viral_score || 0,
+          processing_status: 'completed',
+          creation_date: videoData.createTime ? new Date(videoData.createTime * 1000).toISOString() : new Date().toISOString()
         })
         .select()
         .single();

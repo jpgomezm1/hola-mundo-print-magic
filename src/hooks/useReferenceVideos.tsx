@@ -27,6 +27,14 @@ export interface ReferenceVideo {
   notes?: string;
   is_favorite: boolean;
   engagement_metrics?: any;
+  // Enhanced fields
+  author_info?: any;
+  music_info?: any;
+  performance_metrics?: any;
+  viral_score?: number;
+  processing_status?: string;
+  creation_date?: string;
+  error_details?: string;
   created_at: string;
   updated_at: string;
 }

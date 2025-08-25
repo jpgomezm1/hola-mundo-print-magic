@@ -35,7 +35,8 @@ import {
   ThumbsUp,
   Volume2,
   Award,
-  Flame
+  Flame,
+  Activity
 } from 'lucide-react';
 
 interface EnhancedReferenceCardProps {
@@ -412,15 +413,85 @@ export const EnhancedReferenceCard: React.FC<EnhancedReferenceCardProps> = ({
                     Información del Creador
                   </h4>
                 </CardHeader>
-                <CardContent className="space-y-2">
-                  <p><strong>Usuario:</strong> @{video.creator_username || 'Desconocido'}</p>
-                  <p><strong>Duración:</strong> {video.duration_seconds || 'N/A'} segundos</p>
-                  <p><strong>Categoría:</strong> {video.category || 'Sin categoría'}</p>
+                <CardContent className="space-y-3">
+                  {/* Author Info */}
+                  {video.author_info?.username && (
+                    <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg">
+                      {video.author_info.avatar && (
+                        <img 
+                          src={video.author_info.avatar} 
+                          alt="Creator avatar"
+                          className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm"
+                        />
+                      )}
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold">@{video.author_info.username}</p>
+                          {video.author_info.verified && (
+                            <Badge className="bg-blue-500 text-white text-xs px-1 py-0">
+                              <Star className="w-2 h-2 mr-1" />
+                              Verificado
+                            </Badge>
+                          )}
+                        </div>
+                        {video.author_info.nickname && (
+                          <p className="text-sm text-muted-foreground">{video.author_info.nickname}</p>
+                        )}
+                        {video.author_info.followers && (
+                          <p className="text-xs text-blue-600 font-medium">
+                            {(video.author_info.followers / 1000).toFixed(0)}K seguidores
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Basic Info */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Duración</p>
+                      <p className="font-medium">{video.duration_seconds || 'N/A'}s</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Categoría</p>
+                      <Badge variant="outline" className="text-xs">{video.category || 'General'}</Badge>
+                    </div>
+                  </div>
+
+                  {/* Music Info */}
+                  {video.music_info?.title && (
+                    <div className="p-3 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Music className="w-4 h-4 text-purple-600" />
+                        <p className="text-sm font-medium text-purple-800 dark:text-purple-200">Música</p>
+                      </div>
+                      <p className="text-sm font-semibold">{video.music_info.title}</p>
+                      {video.music_info.author && (
+                        <p className="text-xs text-muted-foreground">por {video.music_info.author}</p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Performance Metrics Summary */}
+                  {video.performance_metrics?.engagement_rate && (
+                    <div className="p-3 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Activity className="w-4 h-4 text-green-600" />
+                          <span className="text-sm font-medium text-green-800 dark:text-green-200">Engagement Rate</span>
+                        </div>
+                        <Badge className="bg-green-500 text-white">
+                          {video.performance_metrics.engagement_rate.toFixed(1)}%
+                        </Badge>
+                      </div>
+                    </div>
+                  )}
+
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => window.open(video.tiktok_url, '_blank')}
-                    className="w-full mt-2"
+                    className="w-full"
                   >
                     <ExternalLink className="w-4 h-4 mr-2" />
                     Ver en TikTok

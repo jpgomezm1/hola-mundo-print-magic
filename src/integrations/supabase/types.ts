@@ -196,8 +196,10 @@ export type Database = {
       reference_videos: {
         Row: {
           audio_style: string | null
+          author_info: Json | null
           category: string | null
           created_at: string
+          creation_date: string | null
           creator_username: string | null
           cta: string | null
           cta_type: string | null
@@ -205,6 +207,7 @@ export type Database = {
           duration_seconds: number | null
           editing_style: string | null
           engagement_metrics: Json | null
+          error_details: string | null
           estilo_edicion: string | null
           extracted_insights: Json | null
           guion_oral: string | null
@@ -217,7 +220,10 @@ export type Database = {
           metrics_likes: number | null
           metrics_shares: number | null
           metrics_views: number | null
+          music_info: Json | null
           notes: string | null
+          performance_metrics: Json | null
+          processing_status: string | null
           script: string | null
           storage_path: string | null
           tags: string[] | null
@@ -231,12 +237,16 @@ export type Database = {
           updated_at: string
           user_id: string
           video_theme: string | null
+          viral_score: number | null
+          visual_analysis: Json | null
           visual_elements: string[] | null
         }
         Insert: {
           audio_style?: string | null
+          author_info?: Json | null
           category?: string | null
           created_at?: string
+          creation_date?: string | null
           creator_username?: string | null
           cta?: string | null
           cta_type?: string | null
@@ -244,6 +254,7 @@ export type Database = {
           duration_seconds?: number | null
           editing_style?: string | null
           engagement_metrics?: Json | null
+          error_details?: string | null
           estilo_edicion?: string | null
           extracted_insights?: Json | null
           guion_oral?: string | null
@@ -256,7 +267,10 @@ export type Database = {
           metrics_likes?: number | null
           metrics_shares?: number | null
           metrics_views?: number | null
+          music_info?: Json | null
           notes?: string | null
+          performance_metrics?: Json | null
+          processing_status?: string | null
           script?: string | null
           storage_path?: string | null
           tags?: string[] | null
@@ -270,12 +284,16 @@ export type Database = {
           updated_at?: string
           user_id: string
           video_theme?: string | null
+          viral_score?: number | null
+          visual_analysis?: Json | null
           visual_elements?: string[] | null
         }
         Update: {
           audio_style?: string | null
+          author_info?: Json | null
           category?: string | null
           created_at?: string
+          creation_date?: string | null
           creator_username?: string | null
           cta?: string | null
           cta_type?: string | null
@@ -283,6 +301,7 @@ export type Database = {
           duration_seconds?: number | null
           editing_style?: string | null
           engagement_metrics?: Json | null
+          error_details?: string | null
           estilo_edicion?: string | null
           extracted_insights?: Json | null
           guion_oral?: string | null
@@ -295,7 +314,10 @@ export type Database = {
           metrics_likes?: number | null
           metrics_shares?: number | null
           metrics_views?: number | null
+          music_info?: Json | null
           notes?: string | null
+          performance_metrics?: Json | null
+          processing_status?: string | null
           script?: string | null
           storage_path?: string | null
           tags?: string[] | null
@@ -309,6 +331,8 @@ export type Database = {
           updated_at?: string
           user_id?: string
           video_theme?: string | null
+          viral_score?: number | null
+          visual_analysis?: Json | null
           visual_elements?: string[] | null
         }
         Relationships: []
