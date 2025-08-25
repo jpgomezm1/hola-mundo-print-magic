@@ -39,12 +39,6 @@ const menuGroups = [
         shortcut: "D"
       },
       { 
-        title: "Videos de Referencia", 
-        url: "/reference-videos", 
-        icon: PlayCircle,
-        shortcut: "R"
-      },
-      { 
         title: "Videos", 
         url: "/videos", 
         icon: PlayCircle,
