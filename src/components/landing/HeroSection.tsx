@@ -32,8 +32,7 @@ export const HeroSection = ({ onGetStarted }: HeroSectionProps) => {
       y: [-10, 10, -10],
       transition: {
         duration: 6,
-        repeat: Infinity,
-        ease: "easeInOut"
+        repeat: Infinity
       }
     }
   };

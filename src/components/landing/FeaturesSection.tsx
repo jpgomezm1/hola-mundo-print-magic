@@ -40,8 +40,7 @@ export const FeaturesSection = () => {
       rotate: [0, 3, 0, -3, 0],
       transition: {
         duration: 5,
-        repeat: Infinity,
-        ease: "easeInOut"
+        repeat: Infinity
       }
     }
   };

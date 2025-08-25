@@ -39,8 +39,7 @@ export const Footer = ({ onGetStarted }: FooterProps) => {
       rotate: [0, 2, 0, -2, 0],
       transition: {
         duration: 4,
-        repeat: Infinity,
-        ease: "easeInOut"
+        repeat: Infinity
       }
     }
   };

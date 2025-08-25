@@ -40,8 +40,7 @@ export const SolutionSection = () => {
       rotate: [0, 5, 0, -5, 0],
       transition: {
         duration: 6,
-        repeat: Infinity,
-        ease: "easeInOut"
+        repeat: Infinity
       }
     }
   };
