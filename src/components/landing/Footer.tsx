@@ -167,8 +167,20 @@ export const Footer = ({ onGetStarted }: FooterProps) => {
               <span className="text-sm">para creadores</span>
             </motion.div>
             
-            <div className="text-sm text-text-muted">
-              © 2024 TikTok AI Analytics. Todos los derechos reservados.
+            <div className="flex flex-col items-end space-y-2">
+              <div className="text-sm text-text-muted">
+                © 2024 TikTok AI Analytics. Todos los derechos reservados.
+              </div>
+              
+              {/* Secret Admin Access */}
+              <motion.button
+                onClick={onGetStarted}
+                className="text-xs text-text-muted/50 hover:text-primary transition-colors opacity-30 hover:opacity-100"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                •••
+              </motion.button>
             </div>
           </motion.div>
         </div>
