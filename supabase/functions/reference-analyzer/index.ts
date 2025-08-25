@@ -245,7 +245,7 @@ Definiciones de los temas:
         { 
           fileData: { 
             mimeType: geminiFile.mimeType || 'video/mp4',
-            fileUri: geminiFile.name // CRÍTICO: usar geminiFile.name, no .uri
+            fileUri: geminiFile.uri || geminiFile.name // Usar .uri si existe, sino .name
           } 
         }
       ]
@@ -256,7 +256,9 @@ Definiciones de los temas:
     }
   };
   
-  console.log(`[GEMINI_ANALYSIS] Usando fileUri: ${geminiFile.name}`);
+  const fileUri = geminiFile.uri || geminiFile.name;
+  console.log(`[GEMINI_ANALYSIS] Usando fileUri: ${fileUri}`);
+  console.log(`[GEMINI_ANALYSIS] Archivo completo:`, JSON.stringify(geminiFile, null, 2));
   
   const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${geminiApiKey}`, {
     method: 'POST',
