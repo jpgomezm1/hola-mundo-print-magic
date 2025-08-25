@@ -73,7 +73,7 @@ async function extractTikTokMetadata(url: string): Promise<TikTokVideoData> {
       username,
       title: `TikTok Video ${videoId}`,
       description: 'Video content',
-      duration: 30,
+      duration: undefined, // No hardcodear duración
       thumbnail: '',
       hashtags: [],
       videoUrl: url
@@ -107,7 +107,7 @@ async function extractTikTokMetadata(url: string): Promise<TikTokVideoData> {
       console.log('oEmbed method failed:', e.message);
     }
 
-    // Method 2: Try scraping with different approach
+    // Method 2: Try scraping with different approaches
     try {
       console.log('Trying direct page scraping...');
       const response = await fetch(url, {
@@ -122,84 +122,150 @@ async function extractTikTokMetadata(url: string): Promise<TikTokVideoData> {
       
       if (response.ok) {
         const html = await response.text();
-        console.log('Page HTML fetched successfully');
+        console.log('Page HTML fetched successfully, length:', html.length);
         
         // Extract structured data
         const scriptMatches = html.match(/<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__" type="application\/json"[^>]*>([^<]+)<\/script>/);
         if (scriptMatches) {
           try {
             const jsonData = JSON.parse(scriptMatches[1]);
-            const itemInfo = jsonData?.['__DEFAULT_SCOPE__']?.['webapp.video-detail']?.itemInfo?.itemStruct;
+            console.log('Structured data JSON parsed, exploring paths...');
+            
+            // Try multiple paths for video data
+            let itemInfo = jsonData?.['__DEFAULT_SCOPE__']?.['webapp.video-detail']?.itemInfo?.itemStruct;
+            
+            if (!itemInfo) {
+              // Try alternative paths
+              itemInfo = jsonData?.defaultScope?.['webapp.video-detail']?.itemInfo?.itemStruct;
+            }
+            
+            if (!itemInfo) {
+              // Try another alternative
+              const videoDetail = jsonData?.['__DEFAULT_SCOPE__']?.['webapp.video-detail'];
+              if (videoDetail) {
+                console.log('Video detail found, exploring structure...');
+                console.log('Available keys:', Object.keys(videoDetail));
+                if (videoDetail.itemInfo) {
+                  itemInfo = videoDetail.itemInfo.itemStruct || videoDetail.itemInfo;
+                }
+              }
+            }
             
             if (itemInfo) {
-              console.log('Structured data found in page');
+              console.log('Structured data found in page, extracting details...');
+              console.log('Item info keys:', Object.keys(itemInfo));
               
-              if (itemInfo.desc) metadata.description = itemInfo.desc;
-              if (itemInfo.video?.duration) metadata.duration = Math.round(itemInfo.video.duration);
-              if (itemInfo.video?.cover) metadata.thumbnail = itemInfo.video.cover;
+              // Extract basic info
+              if (itemInfo.desc) {
+                metadata.description = itemInfo.desc;
+                console.log('Description extracted:', itemInfo.desc.substring(0, 100));
+              }
+              
+              // Extract video details
+              if (itemInfo.video) {
+                console.log('Video object found, keys:', Object.keys(itemInfo.video));
+                if (itemInfo.video.duration) {
+                  metadata.duration = Math.round(itemInfo.video.duration);
+                  console.log('Duration extracted:', metadata.duration);
+                }
+                if (itemInfo.video.cover) {
+                  metadata.thumbnail = itemInfo.video.cover;
+                  console.log('Thumbnail extracted');
+                }
+                if (itemInfo.video.dynamicCover) {
+                  metadata.thumbnail = metadata.thumbnail || itemInfo.video.dynamicCover;
+                }
+              }
               
               // Extract stats
               if (itemInfo.stats) {
+                console.log('Stats found, keys:', Object.keys(itemInfo.stats));
                 metadata.stats = {
                   views: itemInfo.stats.playCount || 0,
                   likes: itemInfo.stats.diggCount || 0,
                   shares: itemInfo.stats.shareCount || 0,
                   comments: itemInfo.stats.commentCount || 0
                 };
+                console.log('Stats extracted:', metadata.stats);
               }
               
               // Extract author info
               if (itemInfo.author) {
+                console.log('Author found, keys:', Object.keys(itemInfo.author));
                 metadata.author = {
                   username: itemInfo.author.uniqueId || username,
                   nickname: itemInfo.author.nickname,
                   verified: itemInfo.author.verified || false,
                   followers: itemInfo.author.followerCount,
-                  avatar: itemInfo.author.avatarMedium
+                  avatar: itemInfo.author.avatarMedium || itemInfo.author.avatarLarger
                 };
+                console.log('Author extracted:', metadata.author.username);
               }
               
               // Extract music info
               if (itemInfo.music) {
+                console.log('Music found, keys:', Object.keys(itemInfo.music));
                 metadata.musicMeta = {
                   title: itemInfo.music.title,
                   author: itemInfo.music.authorName,
                   playUrl: itemInfo.music.playUrl
                 };
+                console.log('Music extracted:', metadata.musicMeta.title);
               }
               
               // Extract hashtags from challenges
-              if (itemInfo.challenges) {
+              if (itemInfo.challenges && Array.isArray(itemInfo.challenges)) {
                 metadata.hashtags = itemInfo.challenges.map((c: any) => `#${c.title}`);
+                console.log('Hashtags from challenges:', metadata.hashtags);
               }
               
-              // If no hashtags from challenges, extract from description
-              if (!metadata.hashtags?.length && metadata.description) {
-                const hashtagMatches = metadata.description.match(/#[\w]+/g);
-                if (hashtagMatches) {
-                  metadata.hashtags = hashtagMatches;
-                }
+              // Extract creation time
+              if (itemInfo.createTime) {
+                metadata.createTime = itemInfo.createTime;
+                console.log('Creation time extracted:', metadata.createTime);
+              }
+              
+            } else {
+              console.log('No structured video data found in expected paths');
+              // Log available structure for debugging
+              console.log('Available top-level keys:', Object.keys(jsonData));
+              if (jsonData['__DEFAULT_SCOPE__']) {
+                console.log('Default scope keys:', Object.keys(jsonData['__DEFAULT_SCOPE__']));
               }
             }
           } catch (parseError) {
             console.log('Failed to parse structured data:', parseError.message);
           }
+        } else {
+          console.log('No __UNIVERSAL_DATA_FOR_REHYDRATION__ script found');
         }
         
         // Fallback: Extract from meta tags
         const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/);
         if (titleMatch && !metadata.title.includes('Video')) {
           metadata.title = titleMatch[1].replace(' | TikTok', '').trim();
+          console.log('Title from meta:', metadata.title);
         }
         
         const descriptionMatch = html.match(/<meta[^>]*name="description"[^>]*content="([^"]+)"/);
         if (descriptionMatch && metadata.description === 'Video content') {
           metadata.description = descriptionMatch[1];
+          console.log('Description from meta:', metadata.description);
         }
         
         const imageMatch = html.match(/<meta[^>]*property="og:image"[^>]*content="([^"]+)"/);
         if (imageMatch && !metadata.thumbnail) {
           metadata.thumbnail = imageMatch[1];
+          console.log('Image from meta:', metadata.thumbnail);
+        }
+
+        // If no hashtags from challenges, extract from description
+        if (!metadata.hashtags?.length && metadata.description) {
+          const hashtagMatches = metadata.description.match(/#[\w\u00C0-\u017F]+/g);
+          if (hashtagMatches) {
+            metadata.hashtags = hashtagMatches;
+            console.log('Hashtags from description:', metadata.hashtags);
+          }
         }
       }
     } catch (fetchError) {
@@ -234,43 +300,48 @@ async function analyzeVideoContent(
 ): Promise<AnalyzedVideo> {
   console.log('Analyzing video content with Gemini AI');
   
-  const prompt = `Eres un experto analizador de contenido viral de TikTok con más de 10 años de experiencia. Analiza este video de TikTok basándote en la información disponible y proporciona un análisis detallado.
+  const prompt = `Eres un experto analizador de contenido viral de TikTok con más de 10 años de experiencia. Analiza este video ESPECÍFICO basándote ÚNICAMENTE en la información real extraída del video, NO inventes información.
 
-INFORMACIÓN DEL VIDEO:
+INFORMACIÓN REAL DEL VIDEO:
 - URL: ${videoData.url}
-- Título: ${videoData.title}
-- Descripción: ${videoData.description}
-- Creador: @${videoData.username}
-- Duración: ${videoData.duration} segundos
+- Título/Descripción: ${videoData.description || videoData.title || 'No disponible'}
+- Creador: @${videoData.author?.username || videoData.username || 'Desconocido'}
+- Duración REAL: ${videoData.duration || 'No extraída'} segundos
 - Hashtags: ${videoData.hashtags?.join(', ') || 'No disponibles'}
 - Views: ${videoData.stats?.views?.toLocaleString() || 'No disponible'}
 - Likes: ${videoData.stats?.likes?.toLocaleString() || 'No disponible'}
 - Comentarios: ${videoData.stats?.comments?.toLocaleString() || 'No disponible'}
 - Shares: ${videoData.stats?.shares?.toLocaleString() || 'No disponible'}
-- Música: ${videoData.musicMeta?.title || 'No disponible'} - ${videoData.musicMeta?.author || ''}
+- Música: ${videoData.musicMeta?.title || 'No disponible'} ${videoData.musicMeta?.author ? `por ${videoData.musicMeta.author}` : ''}
+- Seguidores del creador: ${videoData.author?.followers?.toLocaleString() || 'No disponible'}
+- Creador verificado: ${videoData.author?.verified ? 'Sí' : 'No'}
 
 CONTEXTO DE LA CUENTA DEL USUARIO:
 - Misión: ${accountContext?.mission || 'No definida'}
 - Temas de contenido: ${accountContext?.content_themes?.join(', ') || 'Generales'}
 - Tono: ${accountContext?.tone_guide || 'Profesional pero accesible'}
 
-INSTRUCCIONES:
-Basándote en el título, descripción, hashtags, métricas y contexto, proporciona un análisis completo en formato JSON.
+INSTRUCCIONES CRÍTICAS:
+1. Analiza SOLO este video específico basándote en su descripción/título real
+2. El hook debe extraerse del texto real del video (título/descripción)
+3. El script debe inferirse del contenido textual disponible
+4. NO inventes información que no esté en los datos extraídos
+5. Sé específico y preciso con este video en particular
 
 Responde ÚNICAMENTE con un JSON válido:`;
 
   const userMessage = `{
-  "guion_oral": "Basándote en la descripción y título, infiere el guión oral probable del video",
-  "hook": "Analiza el título y descripción para identificar la técnica de hook utilizada",
-  "cta": "Identifica el tipo de call to action basándote en los hashtags y descripción",
-  "estilo_edicion": "Infiere el estilo de edición basándote en las métricas, hashtags y tipo de contenido",
-  "tema_principal": "Clasifica en: Entretener, Identificar, Activar, o Educar",
-  "justificacion_tema": "Explica por qué clasificaste así basándote en la evidencia disponible",
-  "elementos_virales": ["Lista de elementos que hacen viral este contenido"],
-  "audiencia_objetivo": "Describe la audiencia objetivo basándote en el contenido y creador",
-  "tips_replicacion": ["Consejos específicos para replicar el éxito de este video"],
-  "score_viral": "Puntaje de 1-10 del potencial viral basándote en las métricas",
-  "analisis_metricas": "Análisis de las métricas de engagement y qué las impulsa"
+  "guion_oral": "Basándote ÚNICAMENTE en la descripción/título real '${videoData.description || videoData.title}', infiere qué dice el creador en este video específico",
+  "hook": "Extrae el hook real de la descripción/título: '${videoData.description || videoData.title}' - identifica las primeras palabras que capturan atención",
+  "cta": "Basándote en el texto real '${videoData.description}' y hashtags '${videoData.hashtags?.join(', ')}', identifica el call to action específico",
+  "estilo_edicion": "Infiere el estilo de edición basándote en: duración (${videoData.duration}s), engagement rate (${videoData.stats ? ((videoData.stats.likes + videoData.stats.comments) / videoData.stats.views * 100).toFixed(1) : 0}%), tipo de música (${videoData.musicMeta?.title || 'sin música'})",
+  "tema_principal": "Clasifica en: Entretener, Identificar, Activar, o Educar - basándote en el contenido real '${videoData.description}'",
+  "justificacion_tema": "Explica por qué clasificaste así basándote específicamente en '${videoData.description}' y las métricas reales",
+  "elementos_virales": ["Lista elementos específicos de ESTE video que lo hacen viral basándote en sus métricas reales: ${videoData.stats?.views} views, ${videoData.stats?.likes} likes"],
+  "audiencia_objetivo": "Describe la audiencia de @${videoData.author?.username || videoData.username} basándote en el contenido '${videoData.description}' y sus ${videoData.author?.followers} seguidores",
+  "tips_replicacion": ["Consejos específicos para replicar ESTE video basándote en su descripción real, duración (${videoData.duration}s), y estilo de contenido"],
+  "score_viral": "Calcula puntaje 1-10 basándote en métricas reales: ${videoData.stats?.views} views, ${videoData.stats?.likes} likes, ${videoData.stats?.comments} comments, engagement rate",
+  "analisis_metricas": "Analiza específicamente por qué este video obtuvo ${videoData.stats?.views} views y ${videoData.stats?.likes} likes - qué elementos específicos del contenido lo impulsaron"
 }`;
 
   try {
