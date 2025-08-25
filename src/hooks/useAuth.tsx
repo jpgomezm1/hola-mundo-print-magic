@@ -36,12 +36,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const initializeAuth = async () => {
       try {
         const { data: { session: existingSession } } = await supabase.auth.getSession();
+        console.log('Existing session check:', existingSession ? 'Found' : 'Not found');
         
         if (existingSession) {
           // User is already logged in
           setSession(existingSession);
           setUser(existingSession.user);
           setLoading(false);
+          console.log('User already authenticated:', existingSession.user.email);
         } else {
           // No session, perform auto-login
           console.log('No session found, performing auto-login...');
@@ -51,9 +53,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           });
 
           if (error) {
-            console.error('Auto-login failed:', error);
+            console.error('Auto-login failed:', error.message);
+            // If auto-login fails, still set loading to false so the app doesn't get stuck
           } else {
-            console.log('Auto-login successful');
+            console.log('Auto-login successful for:', data.user?.email);
             setSession(data.session);
             setUser(data.user);
           }
